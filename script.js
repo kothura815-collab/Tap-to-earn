@@ -8,20 +8,21 @@ tg.ready();
 const user = tg.initDataUnsafe?.user;
 
 // ==========================================
+// Config
+// ==========================================
+const SMART_LINK_1 = "https://asiafilm.org/4/e86eb6e961ace79e8f0afaa11d643848";
+const SMART_LINK_2 = "https://asiafilm.org/4/39fe0c373bd3ed585a41b288e8162a7d";
+const BOT_TOKEN = "8982916798:AAFl1DhvrjpV_RhYmb9B-1dVfL8lDqkk93A";
+const CHAT_ID = "-1004291919386";
+
+// ==========================================
 // Variables
 // ==========================================
 let timeLeft = 10;
 let isTapped = false;
+let isProcessing = false;
 let timerInterval;
-let processingInterval;
-let currentReward = 0.01; // 1 Cent
-
-// Adsterra Smart Links (Replace with your actual links)
-const SMART_LINKS = [
-    "https://asiafilm.org/4/e86eb6e961ace79e8f0afaa11d643848",
-    "https://asiafilm.org/4/39fe0c373bd3ed585a41b288e8162a7d",
-    "https://araplhn.org/4/a72845c18c5165595bcb555e1431938d"
-];
+let currentReward = 0.01;
 
 // ==========================================
 // DOM Elements
@@ -33,27 +34,50 @@ const progressText = document.getElementById('progressText');
 const successScreen = document.getElementById('successScreen');
 const mainContainer = document.getElementById('mainContainer');
 const processingScreen = document.getElementById('processingScreen');
-const processingTimerSpan = document.getElementById('processingTimer');
+const processingTimer = document.getElementById('processingTimer');
 const rewardAmountSpan = document.getElementById('rewardAmount');
 const watchAdBtn = document.getElementById('watchAdBtn');
 const userNameSpan = document.getElementById('userName');
 const userBalanceSpan = document.getElementById('userBalance');
 
 // ==========================================
-// Disable Developer Tools (F12, Ctrl+Shift+I, etc.)
+// Security: Disable DevTools & Right Click
 // ==========================================
-document.addEventListener('contextmenu', event => event.preventDefault());
-document.onkeydown = function(e) {
-    if (e.key === 'F12' || 
-        (e.ctrlKey && e.shiftKey && e.key === 'I') || 
-        (e.ctrlKey && e.shiftKey && e.key === 'J') || 
-        (e.ctrlKey && e.key === 'U')) {
+document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+document.addEventListener('keydown', (e) => {
+    if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+        (e.ctrlKey && e.key === 'U')
+    ) {
+        e.preventDefault();
         return false;
     }
-};
+});
+
+// Detect DevTools open
+setInterval(() => {
+    const start = performance.now();
+    debugger;
+    const end = performance.now();
+    if (end - start > 100) {
+        document.body.innerHTML = "<h1 style='color:red;text-align:center;margin-top:50vh;'>DevTools Detected. Please close it.</h1>";
+    }
+}, 1000);
 
 // ==========================================
-// Firebase Firestore Functions
+// User Info
+// ==========================================
+if (user) {
+    userNameSpan.textContent = user.first_name || 'User';
+    loadUserBalance();
+} else {
+    userNameSpan.textContent = 'Guest';
+}
+
+// ==========================================
+// Firebase Functions
 // ==========================================
 async function getFirestoreModules() {
     const { doc, getDoc, setDoc, addDoc, collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js");
@@ -92,16 +116,6 @@ async function saveUserBalance(newBalance) {
 }
 
 // ==========================================
-// User Info Display
-// ==========================================
-if (user) {
-    userNameSpan.textContent = user.first_name || 'User';
-    loadUserBalance();
-} else {
-    userNameSpan.textContent = 'Guest';
-}
-
-// ==========================================
 // Countdown Logic
 // ==========================================
 function startCountdown() {
@@ -131,33 +145,32 @@ function resetGame() {
 }
 
 // ==========================================
-// Coin Tap Event (Opens Smart Link)
+// STEP 1: Coin Tap -> Open Smart Link 1
 // ==========================================
 coinBtn.addEventListener('click', () => {
-    if (isTapped) return;
+    if (isTapped || isProcessing) return;
     isTapped = true;
+    isProcessing = true;
     clearInterval(timerInterval);
 
-    // Pick a random Smart Link
-    const randomLink = SMART_LINKS[Math.floor(Math.random() * SMART_LINKS.length)];
+    // Open Smart Link 1 in new window
+    window.open(SMART_LINK_1, '_blank');
 
-    // Open the Smart Link in a new window (or same window for Telegram)
-    window.open(randomLink, '_blank');
-
-    // Show Processing Screen
+    // Hide main container, show processing
     mainContainer.classList.add('hidden');
     processingScreen.classList.remove('hidden');
 
-    // Start Processing Timer (10 seconds)
-    let processingTime = 10;
-    processingTimerSpan.textContent = processingTime;
+    // Start processing countdown (10 seconds)
+    let processTime = 10;
+    processingTimer.textContent = processTime;
 
-    processingInterval = setInterval(() => {
-        processingTime--;
-        processingTimerSpan.textContent = processingTime;
-        if (processingTime <= 0) {
-            clearInterval(processingInterval);
-            // After processing, show Success Screen
+    const processInterval = setInterval(() => {
+        processTime--;
+        processingTimer.textContent = processTime;
+
+        if (processTime <= 0) {
+            clearInterval(processInterval);
+            isProcessing = false;
             processingScreen.classList.add('hidden');
             successScreen.classList.remove('hidden');
             rewardAmountSpan.textContent = `$${currentReward.toFixed(2)}`;
@@ -166,17 +179,16 @@ coinBtn.addEventListener('click', () => {
 });
 
 // ==========================================
-// Watch Ad & Claim Button
+// STEP 2: Watch Ad & Claim -> Open Smart Link 2
 // ==========================================
 watchAdBtn.addEventListener('click', async () => {
-    // Open another Smart Link before claiming
-    const randomLink = SMART_LINKS[Math.floor(Math.random() * SMART_LINKS.length)];
-    window.open(randomLink, '_blank');
+    // Open Smart Link 2
+    window.open(SMART_LINK_2, '_blank');
 
-    // Wait a moment before claiming
+    // Wait a moment then claim reward
     setTimeout(async () => {
         await claimReward();
-    }, 1500);
+    }, 2000);
 });
 
 // ==========================================
@@ -202,7 +214,7 @@ async function claimReward() {
         await saveUserBalance(newBalance);
         userBalanceSpan.textContent = `$${newBalance.toFixed(2)}`;
 
-        tg.showAlert(`🎉 You earned $${currentReward.toFixed(2)}!\nNew balance: $${newBalance.toFixed(2)}`);
+        tg.showAlert(`You earned $${currentReward.toFixed(2)}!\nNew balance: $${newBalance.toFixed(2)}`);
         setTimeout(() => location.reload(), 1500);
     } catch (error) {
         console.error("Claim error:", error);
@@ -237,7 +249,6 @@ async function withdraw() {
             return;
         }
 
-        // Save Withdraw Request to Firestore
         await addDoc(collection(window.db, "withdrawals"), {
             userId: user.id.toString(),
             firstName: user.first_name || "User",
@@ -246,11 +257,7 @@ async function withdraw() {
             requestedAt: new Date().toISOString()
         });
 
-        // Send to Telegram Channel
-        const BOT_TOKEN = "8982916798:AAFl1DhvrjpV_RhYmb9B-1dVfL8lDqkk93A"; 
-        const CHAT_ID = "-1004291919386";
-        
-        const message = `🔔 New Withdraw Request\n👤 User: ${user.first_name} (${user.id})\n💰 Amount: $${balance.toFixed(2)}`;
+        const message = `New Withdraw Request\nUser: ${user.first_name} (${user.id})\nAmount: $${balance.toFixed(2)}`;
 
         try {
             await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -300,7 +307,7 @@ async function showHistory() {
         let html = '';
         querySnapshot.forEach((doc) => {
             const data = doc.data();
-            const status = data.status === 'pending' ? '🟡 Pending' : '🟢 Success';
+            const status = data.status === 'pending' ? 'Pending' : 'Success';
             html += `<li>${status} - $${data.amount.toFixed(2)}<br><small>${new Date(data.requestedAt).toLocaleString()}</small></li>`;
         });
         list.innerHTML = html;
