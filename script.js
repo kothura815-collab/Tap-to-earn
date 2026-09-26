@@ -5,20 +5,22 @@ tg.ready();
 const user = tg.initDataUnsafe?.user;
 
 let timeLeft = 10;
+let tapCount = 0;
 let isTapped = false;
 let timerInterval;
-let currentReward = 0.01;
-let processingTimer;
+let processingInterval;
+let currentReward = 0;
+let totalEarned = 0;
 
 const coinBtn = document.getElementById('coinBtn');
+const tapCountSpan = document.getElementById('tapCount');
 const secondsSpan = document.getElementById('secondsLeft');
 const progressBar = document.getElementById('progressBar');
-const progressText = document.getElementById('progressText');
-const processingScreen = document.getElementById('processingScreen');
-const successScreen = document.getElementById('successScreen');
 const mainContainer = document.getElementById('mainContainer');
-const rewardAmountSpan = document.getElementById('rewardAmount');
-const watchAdBtn = document.getElementById('watchAdBtn');
+const processingScreen = document.getElementById('processingScreen');
+const claimScreen1 = document.getElementById('claimScreen1');
+const claimScreen2 = document.getElementById('claimScreen2');
+const rewardAmount1Span = document.getElementById('rewardAmount1');
 const userNameSpan = document.getElementById('userName');
 const userBalanceSpan = document.getElementById('userBalance');
 const processingTimerSpan = document.getElementById('processingTimer');
@@ -66,66 +68,87 @@ async function saveUserBalance(newBalance) {
     } catch (error) { console.error(error); }
 }
 
-function startCountdown() {
+// ================= TAP LOGIC =================
+function startTimer() {
     timerInterval = setInterval(() => {
         timeLeft--;
-        updateTimerDisplay();
+        secondsSpan.textContent = timeLeft;
         if (timeLeft <= 0) {
             clearInterval(timerInterval);
-            resetGame();
+            if (!isTapped) {
+                goToProcessing();
+            }
         }
     }, 1000);
 }
 
-function updateTimerDisplay() {
-    secondsSpan.textContent = timeLeft;
-    progressText.textContent = `TIME LEFT: ${timeLeft}`;
-    progressBar.style.width = `${(timeLeft / 10) * 100}%`;
-}
-
-function resetGame() {
-    if (!isTapped) {
-        timeLeft = 10;
-        updateTimerDisplay();
-        startCountdown();
-        tg.showAlert("Time's up! Try again.");
-    }
-}
-
 coinBtn.addEventListener('click', () => {
     if (isTapped) return;
+    
+    // Random reward between 0.00001 and 0.00005
+    const randomReward = Math.random() * (0.00005 - 0.00001) + 0.00001;
+    totalEarned += randomReward;
+    tapCount++;
+    
+    tapCountSpan.textContent = tapCount;
+    progressBar.style.width = `${(tapCount / 10) * 100}%`;
+
+    if (tapCount >= 10) {
+        isTapped = true;
+        clearInterval(timerInterval);
+        goToProcessing();
+    }
+});
+
+function goToProcessing() {
     isTapped = true;
     clearInterval(timerInterval);
-    
-    // Show Processing Screen
     mainContainer.classList.add('hidden');
     processingScreen.classList.remove('hidden');
     
     let processTime = 10;
     processingTimerSpan.textContent = processTime;
     
-    processingTimer = setInterval(() => {
+    processingInterval = setInterval(() => {
         processTime--;
         processingTimerSpan.textContent = processTime;
         if (processTime <= 0) {
-            clearInterval(processingTimer);
-            showClaimScreen();
+            clearInterval(processingInterval);
+            showClaimScreen1();
         }
     }, 1000);
-});
-
-function showClaimScreen() {
-    processingScreen.classList.add('hidden');
-    successScreen.classList.remove('hidden');
-    rewardAmountSpan.textContent = `$${currentReward.toFixed(2)}`;
 }
 
-watchAdBtn.addEventListener('click', async () => {
+// ================= CLAIM 1 =================
+function showClaimScreen1() {
+    processingScreen.classList.add('hidden');
+    claimScreen1.classList.remove('hidden');
+    currentReward = totalEarned;
+    rewardAmount1Span.textContent = `$${currentReward.toFixed(5)}`;
+}
+
+document.getElementById('claimBtn1').addEventListener('click', () => {
     // Open a random Smart Link
     const randomLink = SMART_LINKS[Math.floor(Math.random() * SMART_LINKS.length)];
     window.open(randomLink, '_blank');
     
-    // Wait a bit then claim
+    // Move to Final Claim Screen after returning
+    setTimeout(() => {
+        claimScreen1.classList.add('hidden');
+        claimScreen2.classList.remove('hidden');
+    }, 2000);
+});
+
+// ================= FINAL CLAIM =================
+document.getElementById('claimBtn2').addEventListener('click', async () => {
+    // Open another Smart Link
+    const randomLink = SMART_LINKS[Math.floor(Math.random() * SMART_LINKS.length)];
+    window.open(randomLink, '_blank');
+
+    // Placeholder for AdsGram Ad
+    tg.showAlert("AdsGram Ad Placeholder: Watch Ad to Claim.");
+
+    // After ad, claim reward
     setTimeout(async () => {
         await claimReward();
     }, 2000);
@@ -143,36 +166,48 @@ async function claimReward() {
         let currentBalance = 0;
         if (userSnap.exists()) currentBalance = userSnap.data().balance || 0;
         
-        const newBalance = currentBalance + currentReward;
+        const newBalance = currentBalance + 0.01; // Fixed $0.01 reward
         await saveUserBalance(newBalance);
         userBalanceSpan.textContent = `$${newBalance.toFixed(2)}`;
         
-        tg.showAlert(`🎉 You earned $${currentReward.toFixed(2)}!`);
+        tg.showAlert(`🎉 You earned $0.01!`);
         setTimeout(() => location.reload(), 1500);
     } catch (error) {
         tg.showAlert("Something went wrong.");
     }
 }
 
+// ================= WITHDRAW & HISTORY =================
 async function withdraw() {
     if (!user || !window.db) return;
     try {
-        const { doc, getDoc, addDoc, collection } = await getFirestoreModules();
+        const { doc, getDoc, addDoc, collection, query, where, getDocs } = await getFirestoreModules();
         const userRef = doc(window.db, "users", user.id.toString());
         const userSnap = await getDoc(userRef);
         if (!userSnap.exists()) return tg.showAlert("No balance found.");
         
         const balance = userSnap.data().balance || 0;
         if (balance < 1.00) return tg.showAlert("Minimum withdraw is $1.00");
-        
+
+        // Check Withdraw Limit (1 per day)
+        const today = new Date().toISOString().split('T')[0];
+        const q = query(collection(window.db, "withdrawals"), where("userId", "==", user.id.toString()), where("date", "==", today));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            return tg.showAlert("You can only withdraw once per day.");
+        }
+
+        // Save Withdraw Request
         await addDoc(collection(window.db, "withdrawals"), {
             userId: user.id.toString(),
             firstName: user.first_name || "User",
             amount: balance,
             status: "pending",
+            date: today,
             requestedAt: new Date().toISOString()
         });
 
+        // Telegram Channel Notification
         const BOT_TOKEN = "8982916798:AAFl1DhvrjpV_RhYmb9B-1dVfL8lDqkk93A"; 
         const CHAT_ID = "-1004291919386";
         const message = `🔔 New Withdraw Request\n👤 User: ${user.first_name} (${user.id})\n💰 Amount: $${balance.toFixed(2)}`;
@@ -213,4 +248,4 @@ window.showHistory = showHistory;
 window.closeHistory = closeHistory;
 window.withdraw = withdraw;
 
-window.onload = () => { startCountdown(); };
+window.onload = () => { startTimer(); };
