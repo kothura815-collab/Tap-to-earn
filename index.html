@@ -6,12 +6,11 @@
     <title>Tap to Earn</title>
     <link rel="stylesheet" href="style.css">
     
-    <!-- Telegram Web App SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
-    <!-- Firebase SDK & Config -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-analytics.js";
         import { getFirestore } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -21,10 +20,11 @@
             storageBucket: "tap-to-earn-eaaf2.firebasestorage.app",
             messagingSenderId: "597392618200",
             appId: "1:597392618200:web:2316fb26b28604d2ccddad",
-            measurementId: "G1WZLN21MXD"
+            measurementId: "G-1WZLN21MXD"
         };
 
         const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
         const db = getFirestore(app);
 
         window.db = db;
@@ -33,13 +33,12 @@
 </head>
 <body>
 
-    <!-- Telegram User Info -->
     <div id="userInfo" class="user-info">
         <span id="userName">User</span>
         <span id="userBalance">$0.00</span>
     </div>
 
-    <!-- Main Tap Area -->
+    <!-- Step 1: Tap to Start -->
     <div class="container" id="mainContainer">
         <h1>TAP TO EARN<br>YOUR BONUS!</h1>
         <div class="timer-text">YOU HAVE <span id="secondsLeft">10</span> SECONDS</div>
@@ -57,13 +56,20 @@
         </div>
     </div>
 
-    <!-- Success Screen -->
+    <!-- Step 2: Processing Screen -->
+    <div id="processingScreen" class="processing-screen hidden">
+        <h2>PROCESSING...</h2>
+        <p>Please wait <span id="processingTimer">10</span> seconds</p>
+        <div class="loading-spinner"></div>
+        <p class="small-text">Do not close this window.</p>
+    </div>
+
+    <!-- Step 3: Success Screen -->
     <div id="successScreen" class="success-screen hidden">
         <h2>CONGRATULATIONS</h2>
         <p>You earned <span id="rewardAmount">$0.01</span></p>
         <p class="unlock-text">WATCH AD TO CLAIM REWARD</p>
         <button class="continue-btn" id="watchAdBtn">WATCH AD & CLAIM</button>
-        <p style="font-size:12px; color:#b0c4de; margin-top:10px;" id="adStatus"></p>
     </div>
 
     <!-- Withdraw History Modal -->
