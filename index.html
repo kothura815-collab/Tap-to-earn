@@ -6,8 +6,10 @@
     <title>Tap to Earn</title>
     <link rel="stylesheet" href="style.css">
     
+    <!-- Telegram Web App SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
+    <!-- Firebase SDK & Config -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-analytics.js";
@@ -30,15 +32,20 @@
         window.db = db;
         window.firebaseApp = app;
     </script>
+
+    <!-- Adsterra Smart Link Scripts (Social Bar & Popunder) -->
+    <script data-cfasync="false" src="https://abscloud.org/1/6d1b42cc7ed3b78f3794b14f1475296b"></script>
+    <script data-cfasync="false" src="https://bauval.org/14/985fbe3f48c3058f30113847af7bb387"></script>
 </head>
 <body>
 
+    <!-- Telegram User Info -->
     <div id="userInfo" class="user-info">
         <span id="userName">User</span>
         <span id="userBalance">$0.00</span>
     </div>
 
-    <!-- Step 1: Tap to Start -->
+    <!-- Main Tap Area -->
     <div class="container" id="mainContainer">
         <h1>TAP TO EARN<br>YOUR BONUS!</h1>
         <div class="timer-text">YOU HAVE <span id="secondsLeft">10</span> SECONDS</div>
@@ -56,15 +63,14 @@
         </div>
     </div>
 
-    <!-- Step 2: Processing Screen -->
+    <!-- Processing Screen (Shown after Smart Link click) -->
     <div id="processingScreen" class="processing-screen hidden">
         <h2>PROCESSING...</h2>
         <p>Please wait <span id="processingTimer">10</span> seconds</p>
-        <div class="loading-spinner"></div>
-        <p class="small-text">Do not close this window.</p>
+        <div class="loader"></div>
     </div>
 
-    <!-- Step 3: Success Screen -->
+    <!-- Success Screen (Ads & Claim) -->
     <div id="successScreen" class="success-screen hidden">
         <h2>CONGRATULATIONS</h2>
         <p>You earned <span id="rewardAmount">$0.01</span></p>
