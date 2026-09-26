@@ -40,11 +40,11 @@ if (user) {
 }
 
 // ==========================================
-// Firebase Firestore Functions (Dynamic Import)
+// Firebase Firestore Functions
 // ==========================================
 async function getFirestoreModules() {
-    const { doc, getDoc, setDoc, addDoc, collection } = await import("https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js");
-    return { doc, getDoc, setDoc, addDoc, collection };
+    const { doc, getDoc, setDoc, addDoc, collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js");
+    return { doc, getDoc, setDoc, addDoc, collection, query, where, getDocs };
 }
 
 async function loadUserBalance() {
@@ -123,8 +123,6 @@ coinBtn.addEventListener('click', () => {
 // Watch Ad & Claim Button
 // ==========================================
 watchAdBtn.addEventListener('click', async () => {
-    // ဒီနေရာမှာ Ads Network SDK ကို ထည့်ရပါမယ် (ဥပမာ - AdsGram)
-    // လောလောဆယ် Demo အတွက် တိုက်ရိုက် Claim လုပ်ခွင့်ပြုထားပါတယ်
     await claimReward();
 });
 
@@ -195,10 +193,9 @@ async function withdraw() {
             requestedAt: new Date().toISOString()
         });
 
-        // Telegram Channel ဆီ ပို့ပါ (သင့် Bot Token နဲ့ Chat ID ထည့်ပါ)
-        // ⚠️ Bot Token ကို Vercel Environment Variables မှာ ထည့်ပါ
-        const BOT_TOKEN = "သင့် Bot Token"; 
-        const CHAT_ID = "သင့် Channel ID";
+        // Telegram Channel ဆီ ပို့ပါ
+        const BOT_TOKEN = "8982916798:AAFl1DhvrjpV_RhYmb9B-1dVfL8lDqkk93A"; 
+        const CHAT_ID = "-1004291919386";
         
         const message = `🔔 New Withdraw Request\n👤 User: ${user.first_name} (${user.id})\n💰 Amount: $${balance.toFixed(2)}`;
 
@@ -238,7 +235,7 @@ async function showHistory() {
     }
 
     try {
-        const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js");
+        const { collection, query, where, getDocs } = await getFirestoreModules();
         const q = query(collection(window.db, "withdrawals"), where("userId", "==", user.id.toString()));
         const querySnapshot = await getDocs(q);
 
@@ -265,7 +262,7 @@ function closeHistory() {
 }
 
 // ==========================================
-// Global Functions (HTML ကနေ ခေါ်လို့ရအောင်)
+// Global Functions
 // ==========================================
 window.showHistory = showHistory;
 window.closeHistory = closeHistory;
