@@ -1,24 +1,23 @@
+// ==========================================
 // Telegram WebApp Initialization
+// ==========================================
 const tg = window.Telegram.WebApp;
-tg.expand(); // အပြည့်အဝ ဖွင့်ပါ
-tg.ready(); // အသင့်ဖြစ်ကြောင်း Telegram ဆီ အသိပေးပါ
+tg.expand();
+tg.ready();
 
-// User Info ကို Telegram ကနေ ရယူပါ
 const user = tg.initDataUnsafe?.user;
-if (user) {
-    document.getElementById('userName').textContent = user.first_name || 'User';
-    // သင့် Database ကနေ Balance ကို ဆွဲထုတ်ဖို့ လိုပါတယ် (ဥပမာ - API Call)
-    // လောလောဆယ် Demo အတွက် $0.00 လို့ ပြထားပါတယ်
-    document.getElementById('userBalance').textContent = '$0.00';
-}
 
+// ==========================================
 // Variables
+// ==========================================
 let timeLeft = 10;
 let isTapped = false;
 let timerInterval;
 let currentReward = 0.01; // 1 Cent
 
+// ==========================================
 // DOM Elements
+// ==========================================
 const coinBtn = document.getElementById('coinBtn');
 const secondsSpan = document.getElementById('secondsLeft');
 const progressBar = document.getElementById('progressBar');
@@ -27,13 +26,65 @@ const successScreen = document.getElementById('successScreen');
 const mainContainer = document.getElementById('mainContainer');
 const rewardAmountSpan = document.getElementById('rewardAmount');
 const watchAdBtn = document.getElementById('watchAdBtn');
+const userNameSpan = document.getElementById('userName');
+const userBalanceSpan = document.getElementById('userBalance');
 
-// Start Countdown
+// ==========================================
+// User Info ကို ပြပါ
+// ==========================================
+if (user) {
+    userNameSpan.textContent = user.first_name || 'User';
+    loadUserBalance();
+} else {
+    userNameSpan.textContent = 'Guest';
+}
+
+// ==========================================
+// Firebase Firestore Functions (Dynamic Import)
+// ==========================================
+async function getFirestoreModules() {
+    const { doc, getDoc, setDoc, addDoc, collection } = await import("https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js");
+    return { doc, getDoc, setDoc, addDoc, collection };
+}
+
+async function loadUserBalance() {
+    if (!user || !window.db) return;
+    try {
+        const { doc, getDoc } = await getFirestoreModules();
+        const userRef = doc(window.db, "users", user.id.toString());
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+            const balance = userSnap.data().balance || 0;
+            userBalanceSpan.textContent = `$${balance.toFixed(2)}`;
+        }
+    } catch (error) {
+        console.error("Error loading balance:", error);
+    }
+}
+
+async function saveUserBalance(newBalance) {
+    if (!user || !window.db) return;
+    try {
+        const { doc, setDoc } = await getFirestoreModules();
+        const userRef = doc(window.db, "users", user.id.toString());
+        await setDoc(userRef, {
+            userId: user.id.toString(),
+            firstName: user.first_name || "User",
+            balance: newBalance,
+            lastUpdated: new Date().toISOString()
+        }, { merge: true });
+    } catch (error) {
+        console.error("Error saving balance:", error);
+    }
+}
+
+// ==========================================
+// Countdown Logic
+// ==========================================
 function startCountdown() {
     timerInterval = setInterval(() => {
         timeLeft--;
         updateTimerDisplay();
-
         if (timeLeft <= 0) {
             clearInterval(timerInterval);
             resetGame();
@@ -44,8 +95,7 @@ function startCountdown() {
 function updateTimerDisplay() {
     secondsSpan.textContent = timeLeft;
     progressText.textContent = `TIME LEFT: ${timeLeft}`;
-    let percentage = (timeLeft / 10) * 100;
-    progressBar.style.width = `${percentage}%`;
+    progressBar.style.width = `${(timeLeft / 10) * 100}%`;
 }
 
 function resetGame() {
@@ -57,91 +107,173 @@ function resetGame() {
     }
 }
 
+// ==========================================
 // Coin Tap Event
+// ==========================================
 coinBtn.addEventListener('click', () => {
     if (isTapped) return;
     isTapped = true;
     clearInterval(timerInterval);
-
-    // Success Screen ကို ပြပါ
     mainContainer.classList.add('hidden');
     successScreen.classList.remove('hidden');
     rewardAmountSpan.textContent = `$${currentReward.toFixed(2)}`;
 });
 
+// ==========================================
 // Watch Ad & Claim Button
+// ==========================================
 watchAdBtn.addEventListener('click', async () => {
-    try {
-        // AdsGram SDK ကို သုံးပြီး ကြော်ငြာ ပြပါ
-        // (သင့် Network အလိုက် Code အနည်းငယ် ပြောင်းရပါမယ်)
-        
-        // ဥပမာ - AdsGram အတွက်
-        const AdController = window.Adsgram?.init({ 
-            blockId: "YOUR_AD_BLOCK_ID", // သင့် AdsGram ID ကို ဒီမှာ ထည့်ပါ
-            debug: true 
-        });
-
-        if (AdController) {
-            const result = await AdController.show();
-            if (result.done) {
-                // ကြော်ငြာ ကြည့်ပြီးပါပြီ
-                await claimReward();
-            } else {
-                tg.showAlert("Ad was skipped. Please watch the full ad.");
-            }
-        } else {
-            // Ads SDK မရှိရင် Demo အနေနဲ့ Claim လုပ်ခွင့်ပြုပါ
-            await claimReward();
-        }
-
-    } catch (error) {
-        console.error("Ad error:", error);
-        tg.showAlert("Ad failed to load. Please try again.");
-    }
+    // ဒီနေရာမှာ Ads Network SDK ကို ထည့်ရပါမယ် (ဥပမာ - AdsGram)
+    // လောလောဆယ် Demo အတွက် တိုက်ရိုက် Claim လုပ်ခွင့်ပြုထားပါတယ်
+    await claimReward();
 });
 
-// Reward Claim Function (Backend API ကို လှမ်းခေါ်ရမယ်)
+// ==========================================
+// Reward Claim Function
+// ==========================================
 async function claimReward() {
-    // Database ထဲမှာ User ရဲ့ Balance ကို တိုးဖို့ API ကို လှမ်းခေါ်ပါ
-    // ဥပမာ - await fetch('/api/claim', { method: 'POST', body: JSON.stringify({ userId: user.id, amount: currentReward }) });
-    
-    // လောလောဆယ် Demo အတွက် UI ကို Update လုပ်ပါ
-    tg.showAlert(`🎉 You earned $${currentReward.toFixed(2)}!`);
-    
-    // နောက်တစ်ခါ ပြန်စဖို့ Reset လုပ်ပါ
-    location.reload(); 
+    if (!user) {
+        tg.showAlert("User data not found. Please open from Telegram.");
+        return;
+    }
+
+    try {
+        const { doc, getDoc } = await getFirestoreModules();
+        const userRef = doc(window.db, "users", user.id.toString());
+        const userSnap = await getDoc(userRef);
+
+        let currentBalance = 0;
+        if (userSnap.exists()) {
+            currentBalance = userSnap.data().balance || 0;
+        }
+
+        const newBalance = currentBalance + currentReward;
+        await saveUserBalance(newBalance);
+        userBalanceSpan.textContent = `$${newBalance.toFixed(2)}`;
+
+        tg.showAlert(`🎉 You earned $${currentReward.toFixed(2)}!\nNew balance: $${newBalance.toFixed(2)}`);
+        setTimeout(() => location.reload(), 1500);
+    } catch (error) {
+        console.error("Claim error:", error);
+        tg.showAlert("Something went wrong. Please try again.");
+    }
 }
 
+// ==========================================
 // Withdraw Function
-function withdraw() {
-    // Database ထဲမှာ Withdraw Request ထည့်ဖို့ API ကို လှမ်းခေါ်ပါ
-    // ဥပမာ - fetch('/api/withdraw', { method: 'POST', body: JSON.stringify({ userId: user.id, amount: 1.00 }) });
-    
-    tg.showAlert("Withdraw request sent! (Demo)");
+// ==========================================
+async function withdraw() {
+    if (!user || !window.db) {
+        tg.showAlert("Please open from Telegram.");
+        return;
+    }
+
+    try {
+        const { doc, getDoc, addDoc, collection } = await getFirestoreModules();
+        const userRef = doc(window.db, "users", user.id.toString());
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+            tg.showAlert("No balance found. Tap to earn first!");
+            return;
+        }
+
+        const balance = userSnap.data().balance || 0;
+        const minWithdraw = 1.00;
+
+        if (balance < minWithdraw) {
+            tg.showAlert(`Minimum withdraw is $${minWithdraw.toFixed(2)}.\nYour balance: $${balance.toFixed(2)}`);
+            return;
+        }
+
+        // Withdraw Request ကို Firestore မှာ သိမ်းပါ
+        await addDoc(collection(window.db, "withdrawals"), {
+            userId: user.id.toString(),
+            firstName: user.first_name || "User",
+            amount: balance,
+            status: "pending",
+            requestedAt: new Date().toISOString()
+        });
+
+        // Telegram Channel ဆီ ပို့ပါ (သင့် Bot Token နဲ့ Chat ID ထည့်ပါ)
+        // ⚠️ Bot Token ကို Vercel Environment Variables မှာ ထည့်ပါ
+        const BOT_TOKEN = "သင့် Bot Token"; 
+        const CHAT_ID = "သင့် Channel ID";
+        
+        const message = `🔔 New Withdraw Request\n👤 User: ${user.first_name} (${user.id})\n💰 Amount: $${balance.toFixed(2)}`;
+
+        try {
+            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: CHAT_ID,
+                    text: message,
+                    parse_mode: 'Markdown'
+                })
+            });
+        } catch (error) {
+            console.error("Telegram error:", error);
+        }
+
+        tg.showAlert("Withdraw request sent! Admin will review.");
+    } catch (error) {
+        console.error("Withdraw error:", error);
+        tg.showAlert("Something went wrong. Please try again.");
+    }
 }
 
+// ==========================================
 // Show History Function
+// ==========================================
 async function showHistory() {
     const modal = document.getElementById('historyModal');
     const list = document.getElementById('historyList');
-    
-    // Database ကနေ History ကို ဆွဲထုတ်ပါ
-    // ဥပမာ - const res = await fetch(`/api/history?userId=${user.id}`);
-    
-    // Demo Data
-    list.innerHTML = `
-        <li>🟢 $0.50 - Success <br><small>2024-05-20 10:30 AM</small></li>
-        <li>🟡 $1.00 - Pending <br><small>2024-05-21 02:15 PM</small></li>
-    `;
-    
     modal.classList.remove('hidden');
+    list.innerHTML = `<li>Loading...</li>`;
+
+    if (!user || !window.db) {
+        list.innerHTML = `<li>No history yet.</li>`;
+        return;
+    }
+
+    try {
+        const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js");
+        const q = query(collection(window.db, "withdrawals"), where("userId", "==", user.id.toString()));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+            list.innerHTML = `<li>No history yet.</li>`;
+            return;
+        }
+
+        let html = '';
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            const status = data.status === 'pending' ? '🟡 Pending' : '🟢 Success';
+            html += `<li>${status} - $${data.amount.toFixed(2)}<br><small>${new Date(data.requestedAt).toLocaleString()}</small></li>`;
+        });
+        list.innerHTML = html;
+    } catch (error) {
+        console.error("History error:", error);
+        list.innerHTML = `<li>Error loading history.</li>`;
+    }
 }
 
 function closeHistory() {
     document.getElementById('historyModal').classList.add('hidden');
 }
 
+// ==========================================
+// Global Functions (HTML ကနေ ခေါ်လို့ရအောင်)
+// ==========================================
+window.showHistory = showHistory;
+window.closeHistory = closeHistory;
+window.withdraw = withdraw;
+
+// ==========================================
 // Initialize
+// ==========================================
 window.onload = () => {
     startCountdown();
 };
