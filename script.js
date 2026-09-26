@@ -13,7 +13,16 @@ const user = tg.initDataUnsafe?.user;
 let timeLeft = 10;
 let isTapped = false;
 let timerInterval;
-let currentReward = 0.01; // 1 Cent
+let currentReward = 0.01;
+
+// ==========================================
+// Adsterra Smart Links (သင့် Link တွေ ဒီမှာ ထည့်ပါ)
+// ==========================================
+const ADSTERRA_LINKS = [
+    "https://asiafilm.org/4/e86eb6e961ace79e8f0afaa11d643848",
+    "https://asiafilm.org/4/39fe0c373bd3ed585a41b288e8162a7d"
+];
+let currentAdIndex = 0;
 
 // ==========================================
 // DOM Elements
@@ -28,15 +37,43 @@ const rewardAmountSpan = document.getElementById('rewardAmount');
 const watchAdBtn = document.getElementById('watchAdBtn');
 const userNameSpan = document.getElementById('userName');
 const userBalanceSpan = document.getElementById('userBalance');
+const adStatus = document.getElementById('adStatus');
 
 // ==========================================
-// User Info ကို ပြပါ
+// User Info
 // ==========================================
 if (user) {
     userNameSpan.textContent = user.first_name || 'User';
     loadUserBalance();
 } else {
     userNameSpan.textContent = 'Guest';
+}
+
+// ==========================================
+// Basic Security (Auto-clicker / Inspect ကာကွယ်ခြင်း)
+// ==========================================
+// Right Click ပိတ်
+document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+// F12 / Ctrl+Shift+I / Ctrl+U ပိတ်
+document.addEventListener('keydown', (e) => {
+    if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+        (e.ctrlKey && e.key === 'U')
+    ) {
+        e.preventDefault();
+        return false;
+    }
+});
+
+// Auto-clicker ကာကွယ်ရန် (Click ကြားထဲ အနည်းဆုံး 300ms ခြားရမယ်)
+let lastClickTime = 0;
+function isHumanClick() {
+    const now = Date.now();
+    if (now - lastClickTime < 300) return false;
+    lastClickTime = now;
+    return true;
 }
 
 // ==========================================
@@ -112,6 +149,8 @@ function resetGame() {
 // ==========================================
 coinBtn.addEventListener('click', () => {
     if (isTapped) return;
+    if (!isHumanClick()) return; // Auto-clicker စစ်
+
     isTapped = true;
     clearInterval(timerInterval);
     mainContainer.classList.add('hidden');
@@ -120,10 +159,36 @@ coinBtn.addEventListener('click', () => {
 });
 
 // ==========================================
-// Watch Ad & Claim Button
+// Adsterra Smart Link Flow
 // ==========================================
+let adClicked = false;
+let adOpenedTime = 0;
+
 watchAdBtn.addEventListener('click', async () => {
-    await claimReward();
+    if (adClicked) {
+        tg.showAlert("Please wait for the ad to complete.");
+        return;
+    }
+
+    adClicked = true;
+    adStatus.textContent = "Opening ad... Please wait 5 seconds.";
+
+    // လက်ရှိ Ad Link ကို ယူပါ
+    const adLink = ADSTERRA_LINKS[currentAdIndex];
+    
+    // Link ကို ဖွင့်ပါ (Telegram Web App ထဲမှာ)
+    tg.openLink(adLink, { try_instant_view: false });
+
+    // 5 စက္ကန့် စောင့်ပါ
+    adOpenedTime = Date.now();
+    setTimeout(() => {
+        adStatus.textContent = "You can now claim your reward!";
+        adClicked = false; // ပြန်နှိပ်လို့ရအောင်
+        claimReward();
+    }, 5000);
+
+    // နောက် Ad Link ကို ပြောင်းပါ
+    currentAdIndex = (currentAdIndex + 1) % ADSTERRA_LINKS.length;
 });
 
 // ==========================================
@@ -184,7 +249,6 @@ async function withdraw() {
             return;
         }
 
-        // Withdraw Request ကို Firestore မှာ သိမ်းပါ
         await addDoc(collection(window.db, "withdrawals"), {
             userId: user.id.toString(),
             firstName: user.first_name || "User",
