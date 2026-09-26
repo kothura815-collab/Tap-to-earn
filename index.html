@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tap to Earn</title>
     <link rel="stylesheet" href="style.css">
-    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
+    <!-- Firebase SDK & Config (Your existing config) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-analytics.js";
@@ -20,25 +20,24 @@
             storageBucket: "tap-to-earn-eaaf2.firebasestorage.app",
             messagingSenderId: "597392618200",
             appId: "1:597392618200:web:2316fb26b28604d2ccddad",
-            measurementId: "G-1WZLN21MXD"
+            measurementId: "G1WZLN21MXD"
         };
 
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
         const db = getFirestore(app);
-
         window.db = db;
-        window.firebaseApp = app;
     </script>
 </head>
 <body>
 
+    <!-- User Info -->
     <div id="userInfo" class="user-info">
         <span id="userName">User</span>
         <span id="userBalance">$0.00</span>
     </div>
 
-    <!-- Step 1: Tap to Start -->
+    <!-- Main Container -->
     <div class="container" id="mainContainer">
         <h1>TAP TO EARN<br>YOUR BONUS!</h1>
         <div class="timer-text">YOU HAVE <span id="secondsLeft">10</span> SECONDS</div>
@@ -56,15 +55,7 @@
         </div>
     </div>
 
-    <!-- Step 2: Processing Screen -->
-    <div id="processingScreen" class="processing-screen hidden">
-        <h2>PROCESSING...</h2>
-        <p>Please wait <span id="processingTimer">10</span> seconds</p>
-        <div class="loading-spinner"></div>
-        <p class="small-text">Do not close this window.</p>
-    </div>
-
-    <!-- Step 3: Success Screen -->
+    <!-- Success Screen -->
     <div id="successScreen" class="success-screen hidden">
         <h2>CONGRATULATIONS</h2>
         <p>You earned <span id="rewardAmount">$0.01</span></p>
@@ -72,13 +63,18 @@
         <button class="continue-btn" id="watchAdBtn">WATCH AD & CLAIM</button>
     </div>
 
+    <!-- Processing Overlay (New) -->
+    <div id="processingScreen" class="processing-screen hidden">
+        <div class="spinner"></div>
+        <h2>Processing...</h2>
+        <p id="processingTimer">Please wait 10 seconds.</p>
+    </div>
+
     <!-- Withdraw History Modal -->
     <div id="historyModal" class="modal hidden">
         <div class="modal-content">
             <h3>Withdraw History</h3>
-            <ul id="historyList">
-                <li>Loading...</li>
-            </ul>
+            <ul id="historyList"><li>Loading...</li></ul>
             <button onclick="closeHistory()">Close</button>
         </div>
     </div>
