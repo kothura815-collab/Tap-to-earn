@@ -5,10 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tap to Earn</title>
     <link rel="stylesheet" href="style.css">
+    
     <!-- Telegram Web App SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- AdsGram SDK (ဥပမာ - သင့် Network အလိုက် ပြောင်းပါ) -->
-    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+    
+    <!-- Firebase SDK & Config -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-analytics.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCE_t8CjxmuKW0qfscdeklpks9se2AnOtU",
+            authDomain: "tap-to-earn-eaaf2.firebaseapp.com",
+            projectId: "tap-to-earn-eaaf2",
+            storageBucket: "tap-to-earn-eaaf2.firebasestorage.app",
+            messagingSenderId: "597392618200",
+            appId: "1:597392618200:web:2316fb26b28604d2ccddad",
+            measurementId: "G-1WZLN21MXD"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
+
+        // ဒီ Function တွေကို Global အနေနဲ့ သိမ်းထားပါ
+        window.db = db;
+        window.firebaseApp = app;
+    </script>
 </head>
 <body>
 
@@ -50,8 +77,7 @@
         <div class="modal-content">
             <h3>Withdraw History</h3>
             <ul id="historyList">
-                <!-- History data will be loaded here from Database -->
-                <li>No history yet.</li>
+                <li>Loading...</li>
             </ul>
             <button onclick="closeHistory()">Close</button>
         </div>
@@ -63,6 +89,6 @@
         <button onclick="withdraw()">💸 Withdraw</button>
     </div>
 
-    <script src="script.js"></script>
+    <script src="script.js" type="module"></script>
 </body>
 </html>
