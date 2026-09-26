@@ -29,15 +29,11 @@
         window.db = db;
     </script>
 
-    <!-- Adsterra Popunder & Social Bar Scripts -->
-    <script data-cfasync="false" src="https://abscloud.org/1/6d1b42cc7ed3b78f3794b14f1475296b"></script>
-    <script data-cfasync="false" src="https://bauval.org/14/985fbe3f48c3058f30113847af7bb387"></script>
-
-    <!-- Anti-Hack: Disable Right Click, F12, Ctrl+Shift+I, etc. -->
+    <!-- Anti-Hack Script -->
     <script>
         document.addEventListener('contextmenu', event => event.preventDefault());
         document.onkeydown = function(e) {
-            if(e.keyCode == 123) { return false; } // F12
+            if(e.keyCode == 123) { return false; }
             if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) { return false; }
             if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) { return false; }
             if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) { return false; }
@@ -46,16 +42,22 @@
 </head>
 <body>
 
+    <!-- Adsterra Smart Links (Hidden) -->
+    <div style="display:none;">
+        <script data-cfasync="false" src="https://abscloud.org/1/6d1b42cc7ed3b78f3794b14f1475296b"></script>
+        <script data-cfasync="false" src="https://bauval.org/14/985fbe3f48c3058f30113847af7bb387"></script>
+    </div>
+
+    <!-- User Info -->
     <div id="userInfo" class="user-info">
         <span id="userName">User</span>
         <span id="userBalance">$0.00</span>
     </div>
 
-    <!-- Screen 1: Tap -->
+    <!-- Main Tap Area -->
     <div class="container" id="mainContainer">
         <h1>TAP TO EARN<br>YOUR BONUS!</h1>
-        <div class="timer-text">TAP COUNT: <span id="tapCount">0</span> / 10</div>
-        <div class="timer-text">TIME LEFT: <span id="secondsLeft">10</span>s</div>
+        <div class="timer-text">YOU HAVE <span id="secondsLeft">10</span> SECONDS</div>
 
         <div class="coin-container">
             <div class="coin" id="coinBtn">
@@ -64,34 +66,36 @@
             </div>
         </div>
 
-        <div class="progress-container">
+        <div class="progress-container" id="progressContainer">
             <div class="progress-bar" id="progressBar"></div>
+            <div class="progress-text" id="progressText">TIME LEFT: 10</div>
         </div>
     </div>
 
-    <!-- Screen 2: Processing -->
+    <!-- Processing Screen -->
     <div id="processingScreen" class="success-screen hidden">
         <h2>PROCESSING...</h2>
         <p>Please wait <span id="processingTimer">10</span> seconds</p>
         <div class="loader"></div>
     </div>
 
-    <!-- Screen 3: Claim 1 -->
-    <div id="claimScreen1" class="success-screen hidden">
-        <h2>CONGRATULATIONS</h2>
-        <p>You earned <span id="rewardAmount1">$0.00</span></p>
-        <p class="unlock-text">WATCH AD TO CLAIM REWARD</p>
-        <button class="continue-btn" id="claimBtn1">CLAIM REWARD</button>
+    <!-- First Claim Screen -->
+    <div id="firstClaimScreen" class="success-screen hidden">
+        <h2>STEP 1 COMPLETE</h2>
+        <p>You earned <span id="firstRewardAmount">$0.00</span></p>
+        <p class="unlock-text">WATCH AD TO CONTINUE</p>
+        <button class="continue-btn" id="firstClaimBtn">WATCH AD & CONTINUE</button>
     </div>
 
-    <!-- Screen 4: Final Claim -->
-    <div id="claimScreen2" class="success-screen hidden">
+    <!-- Final Claim Screen -->
+    <div id="finalClaimScreen" class="success-screen hidden">
         <h2>FINAL STEP</h2>
-        <p>Watch one more ad to get your reward.</p>
-        <button class="continue-btn" id="claimBtn2">WATCH AD & CLAIM</button>
+        <p>You earned <span id="finalRewardAmount">$0.00</span></p>
+        <p class="unlock-text">WATCH AD TO CLAIM REWARD</p>
+        <button class="continue-btn" id="finalClaimBtn">WATCH AD & CLAIM</button>
     </div>
 
-    <!-- Withdraw History Modal -->
+    <!-- History Modal -->
     <div id="historyModal" class="modal hidden">
         <div class="modal-content">
             <h3>Withdraw History</h3>
@@ -100,6 +104,7 @@
         </div>
     </div>
 
+    <!-- Bottom Navigation -->
     <div class="bottom-nav">
         <button onclick="showHistory()">📜 History</button>
         <button onclick="withdraw()">💸 Withdraw</button>
