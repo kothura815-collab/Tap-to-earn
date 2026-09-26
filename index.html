@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tap to Earn</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
-    <!-- Firebase SDK & Config (Your existing config) -->
+    <!-- Telegram Web App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-analytics.js";
         import { getFirestore } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -24,20 +25,34 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
         const db = getFirestore(app);
         window.db = db;
+    </script>
+
+    <!-- Anti-Hack / Disable Right Click & F12 -->
+    <script>
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        document.onkeydown = function(e) {
+            if(e.keyCode == 123) { return false; } // F12
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) { return false; }
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) { return false; }
+            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) { return false; }
+        };
     </script>
 </head>
 <body>
 
-    <!-- User Info -->
+    <!-- Adsterra Smart Link (Hidden iframe/script) -->
+    <div style="display:none;">
+        <script data-cfasync="false" src="https://abscloud.org/1/6d1b42cc7ed3b78f3794b14f1475296b"></script>
+        <script data-cfasync="false" src="https://bauval.org/14/985fbe3f48c3058f30113847af7bb387"></script>
+    </div>
+
     <div id="userInfo" class="user-info">
         <span id="userName">User</span>
         <span id="userBalance">$0.00</span>
     </div>
 
-    <!-- Main Container -->
     <div class="container" id="mainContainer">
         <h1>TAP TO EARN<br>YOUR BONUS!</h1>
         <div class="timer-text">YOU HAVE <span id="secondsLeft">10</span> SECONDS</div>
@@ -55,7 +70,14 @@
         </div>
     </div>
 
-    <!-- Success Screen -->
+    <!-- Processing Screen -->
+    <div id="processingScreen" class="success-screen hidden">
+        <h2>PROCESSING...</h2>
+        <p>Please wait <span id="processingTimer">10</span> seconds</p>
+        <div class="loader"></div>
+    </div>
+
+    <!-- Claim Screen -->
     <div id="successScreen" class="success-screen hidden">
         <h2>CONGRATULATIONS</h2>
         <p>You earned <span id="rewardAmount">$0.01</span></p>
@@ -63,14 +85,7 @@
         <button class="continue-btn" id="watchAdBtn">WATCH AD & CLAIM</button>
     </div>
 
-    <!-- Processing Overlay (New) -->
-    <div id="processingScreen" class="processing-screen hidden">
-        <div class="spinner"></div>
-        <h2>Processing...</h2>
-        <p id="processingTimer">Please wait 10 seconds.</p>
-    </div>
-
-    <!-- Withdraw History Modal -->
+    <!-- History Modal -->
     <div id="historyModal" class="modal hidden">
         <div class="modal-content">
             <h3>Withdraw History</h3>
@@ -79,7 +94,6 @@
         </div>
     </div>
 
-    <!-- Bottom Navigation -->
     <div class="bottom-nav">
         <button onclick="showHistory()">📜 History</button>
         <button onclick="withdraw()">💸 Withdraw</button>
