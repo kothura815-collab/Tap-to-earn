@@ -12,6 +12,9 @@ let accumulatedReward = 0;
 let timerInterval;
 let processingTimer;
 
+// AdsGram Block ID
+const ADSGRAM_BLOCK_ID = "50163"; 
+
 // Adsterra Smart Links
 const SMART_LINKS = [
     "https://asiafilm.org/4/e86eb6e961ace79e8f0afaa11d643848",
@@ -33,6 +36,7 @@ const firstRewardAmount = document.getElementById('firstRewardAmount');
 const finalRewardAmount = document.getElementById('finalRewardAmount');
 const userNameSpan = document.getElementById('userName');
 const userBalanceSpan = document.getElementById('userBalance');
+const tapCountDisplay = document.getElementById('tapCountDisplay');
 
 // Load User
 if (user) {
@@ -42,8 +46,8 @@ if (user) {
 
 // Firebase Functions
 async function getFirestoreModules() {
-    const { doc, getDoc, setDoc, addDoc, collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js");
-    return { doc, getDoc, setDoc, addDoc, collection, query, where, getDocs };
+    const { doc, getDoc, setDoc, addDoc, collection, query, where, getDocs, updateDoc } = await import("https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js");
+    return { doc, getDoc, setDoc, addDoc, collection, query, where, getDocs, updateDoc };
 }
 
 async function loadUserBalance() {
@@ -82,7 +86,6 @@ function startCountdown() {
             if (tapCount > 0) {
                 showProcessingScreen();
             } else {
-                // No taps, reset timer
                 timeLeft = 10;
                 updateTimerDisplay();
                 startCountdown();
@@ -102,15 +105,14 @@ coinBtn.addEventListener('click', () => {
     if (isTapped) return;
     
     tapCount++;
-    // Random reward between 0.00001 and 0.00005
     const randomReward = (Math.random() * (0.00005 - 0.00001) + 0.00001);
     accumulatedReward += randomReward;
     
-    // Update UI feedback (optional)
+    tapCountDisplay.textContent = tapCount;
+    
     coinBtn.style.transform = 'scale(0.9)';
     setTimeout(() => coinBtn.style.transform = 'scale(1)', 100);
 
-    // If 10 taps reached, go to processing
     if (tapCount >= 10) {
         isTapped = true;
         clearInterval(timerInterval);
@@ -145,11 +147,9 @@ function showFirstClaimScreen() {
 
 // First Claim Button
 document.getElementById('firstClaimBtn').addEventListener('click', () => {
-    // Open Smart Link
     const randomLink = SMART_LINKS[Math.floor(Math.random() * SMART_LINKS.length)];
     window.open(randomLink, '_blank');
     
-    // Show Final Screen after a short delay
     setTimeout(() => {
         firstClaimScreen.classList.add('hidden');
         finalClaimScreen.classList.remove('hidden');
@@ -157,20 +157,31 @@ document.getElementById('firstClaimBtn').addEventListener('click', () => {
     }, 1500);
 });
 
-// Final Claim Button
+// Final Claim Button (AdsGram Integration)
 document.getElementById('finalClaimBtn').addEventListener('click', async () => {
-    // Open another Smart Link
     const randomLink = SMART_LINKS[Math.floor(Math.random() * SMART_LINKS.length)];
     window.open(randomLink, '_blank');
 
-    // AdsGram Placeholder (Add your AdsGram SDK code here)
-    // For now, we simulate an ad watch
-    tg.showAlert("Watching Ad... (Placeholder)");
-    
-    // Simulate ad completion
-    setTimeout(async () => {
-        await claimReward();
-    }, 2000);
+    try {
+        const AdController = window.Adsgram?.init({ 
+            blockId: ADSGRAM_BLOCK_ID,
+            debug: true 
+        });
+
+        if (AdController) {
+            const result = await AdController.show();
+            if (result.done) {
+                await claimReward();
+            } else {
+                tg.showAlert("Ad was skipped. Please watch the full ad.");
+            }
+        } else {
+            await claimReward();
+        }
+    } catch (error) {
+        console.error("Ad error:", error);
+        tg.showAlert("Ad failed to load. Please try again.");
+    }
 });
 
 // Claim Reward
@@ -183,7 +194,6 @@ async function claimReward() {
         let currentBalance = 0;
         if (userSnap.exists()) currentBalance = userSnap.data().balance || 0;
         
-        // Add accumulated reward + $0.01 bonus
         const totalReward = accumulatedReward + 0.01;
         const newBalance = currentBalance + totalReward;
         
@@ -192,7 +202,6 @@ async function claimReward() {
         
         tg.showAlert(`🎉 You earned $${totalReward.toFixed(5)}!`);
         
-        // Reset Game
         resetGameState();
     } catch (error) {
         tg.showAlert("Something went wrong.");
@@ -206,6 +215,7 @@ function resetGameState() {
     isTapped = false;
     tapCount = 0;
     accumulatedReward = 0;
+    tapCountDisplay.textContent = "0";
     
     mainContainer.classList.remove('hidden');
     processingScreen.classList.add('hidden');
@@ -216,21 +226,20 @@ function resetGameState() {
     startCountdown();
 }
 
-// Withdraw
+// Withdraw (Balance လျော့အောင် ပြင်ထားတယ်)
 async function withdraw() {
     if (!user || !window.db) return;
     try {
-        const { doc, getDoc, addDoc, collection } = await getFirestoreModules();
+        const { doc, getDoc, addDoc, collection, updateDoc } = await getFirestoreModules();
         const userRef = doc(window.db, "users", user.id.toString());
         const userSnap = await getDoc(userRef);
+        
         if (!userSnap.exists()) return tg.showAlert("No balance found.");
         
         const balance = userSnap.data().balance || 0;
         if (balance < 1.00) return tg.showAlert("Minimum withdraw is $1.00");
         
-        // Check daily withdraw limit (Implement logic)
-        // For now, just send request
-        
+        // Withdraw Request
         await addDoc(collection(window.db, "withdrawals"), {
             userId: user.id.toString(),
             firstName: user.first_name || "User",
@@ -239,6 +248,15 @@ async function withdraw() {
             requestedAt: new Date().toISOString()
         });
 
+        // Balance ကို သုည လုပ်ပါ
+        await updateDoc(userRef, {
+            balance: 0,
+            lastWithdraw: new Date().toISOString()
+        });
+        
+        userBalanceSpan.textContent = "$0.00000";
+
+        // Telegram Channel
         const BOT_TOKEN = "8982916798:AAFl1DhvrjpV_RhYmb9B-1dVfL8lDqkk93A"; 
         const CHAT_ID = "-1004291919386";
         const message = `🔔 New Withdraw Request\n👤 User: ${user.first_name} (${user.id})\n💰 Amount: $${balance.toFixed(5)}`;
@@ -249,8 +267,11 @@ async function withdraw() {
             body: JSON.stringify({ chat_id: CHAT_ID, text: message, parse_mode: 'Markdown' })
         });
 
-        tg.showAlert("Withdraw request sent!");
-    } catch (error) { tg.showAlert("Error."); }
+        tg.showAlert("Withdraw request sent! Balance reset to 0.");
+    } catch (error) { 
+        console.error(error);
+        tg.showAlert("Error."); 
+    }
 }
 
 // History
