@@ -83,9 +83,11 @@ function startCountdown() {
         updateTimerDisplay();
         if (timeLeft <= 0) {
             clearInterval(timerInterval);
+            // Time 0 ဖြစ်မှ Processing ကို သွားမယ်
             if (tapCount > 0) {
                 showProcessingScreen();
             } else {
+                // Tap မရှိရင် ပြန် Reset
                 timeLeft = 10;
                 updateTimerDisplay();
                 startCountdown();
@@ -105,18 +107,21 @@ coinBtn.addEventListener('click', () => {
     if (isTapped) return;
     
     tapCount++;
-    const randomReward = (Math.random() * (0.00005 - 0.00001) + 0.00001);
-    accumulatedReward += randomReward;
+    // Tap တစ်ချက်နှိပ်တိုင်း 0.00001 တိုးမယ်
+    accumulatedReward += 0.00001;
     
     tapCountDisplay.textContent = tapCount;
     
+    // Visual Feedback
     coinBtn.style.transform = 'scale(0.9)';
     setTimeout(() => coinBtn.style.transform = 'scale(1)', 100);
 
+    // Tap 10 ချက်ပြည့်ရင် Timer ကို 0 ဖြစ်အောင် လုပ်မယ် (ဒါပေမယ့် Timer က အလိုအလျောက် 0 ဖြစ်တဲ့အထိ စောင့်မယ်)
     if (tapCount >= 10) {
+        // ဒီနေရာမှာ Timer ကို ချက်ချင်း 0 မလုပ်ဘူး။ 
+        // Timer က 0 ဖြစ်တဲ့အထိ စောင့်ပြီးမှ Processing ကို သွားမယ်။
+        // ဒါပေမယ့် Tap 10 ချက်ပြည့်ရင် ထပ်နှိပ်လို့ မရအောင် isTapped ကို true လုပ်ထားမယ်။
         isTapped = true;
-        clearInterval(timerInterval);
-        showProcessingScreen();
     }
 });
 
@@ -142,26 +147,38 @@ function showProcessingScreen() {
 function showFirstClaimScreen() {
     processingScreen.classList.add('hidden');
     firstClaimScreen.classList.remove('hidden');
-    firstRewardAmount.textContent = `$${accumulatedReward.toFixed(5)}`;
+    
+    // First Step Reward: 0.00003 to 0.00005
+    const firstReward = (Math.random() * (0.00005 - 0.00003) + 0.00003);
+    accumulatedReward += firstReward;
+    firstRewardAmount.textContent = `$${firstReward.toFixed(5)}`;
 }
 
 // First Claim Button
 document.getElementById('firstClaimBtn').addEventListener('click', () => {
+    // Open Smart Link
     const randomLink = SMART_LINKS[Math.floor(Math.random() * SMART_LINKS.length)];
     window.open(randomLink, '_blank');
     
+    // 5s စောင့်ပြီး Final Step ကို သွားမယ်
     setTimeout(() => {
         firstClaimScreen.classList.add('hidden');
         finalClaimScreen.classList.remove('hidden');
-        finalRewardAmount.textContent = `$${accumulatedReward.toFixed(5)}`;
-    }, 1500);
+        
+        // Final Step Reward: 0.00003 to 0.00005
+        const finalReward = (Math.random() * (0.00005 - 0.00003) + 0.00003);
+        accumulatedReward += finalReward;
+        finalRewardAmount.textContent = `$${finalReward.toFixed(5)}`;
+    }, 5000);
 });
 
 // Final Claim Button (AdsGram Integration)
 document.getElementById('finalClaimBtn').addEventListener('click', async () => {
+    // Open Smart Link
     const randomLink = SMART_LINKS[Math.floor(Math.random() * SMART_LINKS.length)];
     window.open(randomLink, '_blank');
 
+    // AdsGram
     try {
         const AdController = window.Adsgram?.init({ 
             blockId: ADSGRAM_BLOCK_ID,
@@ -180,7 +197,9 @@ document.getElementById('finalClaimBtn').addEventListener('click', async () => {
         }
     } catch (error) {
         console.error("Ad error:", error);
-        tg.showAlert("Ad failed to load. Please try again.");
+        // AdsGram Error တက်ရင်တောင် Reward ကို ပေးမယ် (Demo)
+        tg.showAlert("Ad error. Claiming directly (Demo).");
+        await claimReward();
     }
 });
 
@@ -194,7 +213,8 @@ async function claimReward() {
         let currentBalance = 0;
         if (userSnap.exists()) currentBalance = userSnap.data().balance || 0;
         
-        const totalReward = accumulatedReward + 0.01;
+        // Total Reward = Tap Reward + First Step + Final Step
+        const totalReward = accumulatedReward;
         const newBalance = currentBalance + totalReward;
         
         await saveUserBalance(newBalance);
@@ -202,6 +222,7 @@ async function claimReward() {
         
         tg.showAlert(`🎉 You earned $${totalReward.toFixed(5)}!`);
         
+        // ပြန် Reset လုပ်ပြီး Tap နေရာကနေ ပြန်စမယ်
         resetGameState();
     } catch (error) {
         tg.showAlert("Something went wrong.");
