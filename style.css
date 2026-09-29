@@ -36,12 +36,12 @@ body {
 }
 
 .balance-badge {
-    background: rgba(255, 204, 0, 0.15);
-    border-color: rgba(255, 204, 0, 0.3);
+    background: rgba(0, 200, 255, 0.15);
+    border-color: rgba(0, 200, 255, 0.3);
 }
 
 #userBalance {
-    color: #ffcc00;
+    color: #00c8ff;
     font-weight: bold;
     font-size: 14px;
 }
@@ -60,12 +60,12 @@ body {
     font-weight: 900;
     color: #ffffff;
     letter-spacing: 2px;
-    text-shadow: 0 0 20px rgba(255, 204, 0, 0.5);
+    text-shadow: 0 0 20px rgba(0, 200, 255, 0.5);
 }
 
 .subtitle {
     font-size: 20px;
-    color: #ffcc00;
+    color: #00c8ff;
     font-weight: bold;
     letter-spacing: 3px;
     margin-bottom: 20px;
@@ -94,10 +94,10 @@ body {
 .timer-value {
     font-size: 24px;
     font-weight: bold;
-    color: #ffcc00;
+    color: #00c8ff;
 }
 
-/* Coin */
+/* Gem (ပုံအသစ်) */
 .coin-container {
     position: relative;
     margin-bottom: 30px;
@@ -108,9 +108,9 @@ body {
 
 .coin-glow {
     position: absolute;
-    width: 200px;
-    height: 200px;
-    background: radial-gradient(circle, rgba(255, 204, 0, 0.3) 0%, transparent 70%);
+    width: 220px;
+    height: 220px;
+    background: radial-gradient(circle, rgba(0, 200, 255, 0.3) 0%, transparent 70%);
     border-radius: 50%;
     animation: pulse 2s infinite;
 }
@@ -120,10 +120,10 @@ body {
     50% { transform: scale(1.1); opacity: 0.8; }
 }
 
-.coin {
+.gem {
     width: 160px;
     height: 160px;
-    background: radial-gradient(circle at 30% 30%, #ffd700, #d4af37, #b8860b);
+    background: linear-gradient(135deg, #00c8ff, #0066ff, #00c8ff);
     border-radius: 50%;
     display: flex;
     justify-content: center;
@@ -131,20 +131,24 @@ body {
     cursor: pointer;
     transition: transform 0.1s;
     position: relative;
-    border: 6px solid #ffea00;
-    box-shadow: 0 15px 30px rgba(0,0,0,0.6), inset 0 -8px 20px rgba(0,0,0,0.3), 0 0 40px rgba(255, 204, 0, 0.4);
+    border: 6px solid #00e5ff;
+    box-shadow: 0 15px 40px rgba(0, 200, 255, 0.5), inset 0 -8px 20px rgba(0,0,0,0.3), 0 0 60px rgba(0, 200, 255, 0.4);
     z-index: 2;
+    animation: gemGlow 2s infinite alternate;
 }
 
-.coin:active {
+@keyframes gemGlow {
+    0% { box-shadow: 0 15px 40px rgba(0, 200, 255, 0.5), inset 0 -8px 20px rgba(0,0,0,0.3), 0 0 60px rgba(0, 200, 255, 0.4); }
+    100% { box-shadow: 0 15px 50px rgba(0, 200, 255, 0.8), inset 0 -8px 20px rgba(0,0,0,0.3), 0 0 80px rgba(0, 200, 255, 0.6); }
+}
+
+.gem:active {
     transform: scale(0.9);
 }
 
-.dollar-sign {
-    font-size: 70px;
-    font-weight: bold;
-    color: #b8860b;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+.gem-icon {
+    font-size: 80px;
+    filter: drop-shadow(0 0 20px rgba(0, 200, 255, 0.8));
 }
 
 .hand-icon {
@@ -176,7 +180,7 @@ body {
 .progress-bar {
     height: 100%;
     width: 100%;
-    background: linear-gradient(90deg, #00c853, #64dd17);
+    background: linear-gradient(90deg, #00c8ff, #00e5ff);
     position: absolute;
     top: 0;
     left: 0;
@@ -204,7 +208,7 @@ body {
 }
 
 #tapCountDisplay {
-    color: #ffcc00;
+    color: #00c8ff;
     font-weight: bold;
     font-size: 18px;
 }
@@ -231,7 +235,7 @@ body {
     width: 90%;
     max-width: 350px;
     text-align: center;
-    border: 1px solid rgba(255, 204, 0, 0.3);
+    border: 1px solid rgba(0, 200, 255, 0.3);
     box-shadow: 0 20px 60px rgba(0,0,0,0.8);
 }
 
@@ -247,7 +251,7 @@ body {
 }
 
 .screen-content h2 {
-    color: #ffcc00;
+    color: #00c8ff;
     font-size: 22px;
     margin-bottom: 15px;
     letter-spacing: 1px;
@@ -260,10 +264,10 @@ body {
 }
 
 .reward-text {
-    color: #00c853;
+    color: #00e5ff;
     font-weight: bold;
     font-size: 24px;
-    text-shadow: 0 0 15px rgba(0, 200, 83, 0.5);
+    text-shadow: 0 0 15px rgba(0, 200, 255, 0.5);
 }
 
 .unlock-text {
@@ -276,7 +280,7 @@ body {
 }
 
 .action-btn {
-    background: linear-gradient(90deg, #00c853, #64dd17);
+    background: linear-gradient(90deg, #00c8ff, #00e5ff);
     color: white;
     border: none;
     padding: 16px 40px;
@@ -286,13 +290,13 @@ body {
     cursor: pointer;
     width: 100%;
     transition: all 0.3s;
-    box-shadow: 0 8px 20px rgba(0, 200, 83, 0.4);
+    box-shadow: 0 8px 20px rgba(0, 200, 255, 0.4);
     letter-spacing: 1px;
 }
 
 .action-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 25px rgba(0, 200, 83, 0.6);
+    box-shadow: 0 12px 25px rgba(0, 200, 255, 0.6);
 }
 
 .action-btn:active {
@@ -359,11 +363,11 @@ body {
     width: 90%;
     max-width: 350px;
     text-align: center;
-    border: 1px solid rgba(255, 204, 0, 0.3);
+    border: 1px solid rgba(0, 200, 255, 0.3);
 }
 
 .modal-content h3 {
-    color: #ffcc00;
+    color: #00c8ff;
     margin-bottom: 20px;
     font-size: 20px;
 }
@@ -384,7 +388,7 @@ body {
 }
 
 .close-btn {
-    background: #ffcc00;
+    background: #00c8ff;
     border: none;
     padding: 12px 30px;
     border-radius: 10px;
@@ -395,13 +399,13 @@ body {
 }
 
 .close-btn:hover {
-    background: #ffd633;
+    background: #00e5ff;
 }
 
 /* Loader */
 .loader {
     border: 5px solid rgba(255, 255, 255, 0.1);
-    border-top: 5px solid #ffcc00;
+    border-top: 5px solid #00c8ff;
     border-radius: 50%;
     width: 45px;
     height: 45px;
