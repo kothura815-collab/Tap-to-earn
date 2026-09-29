@@ -12,8 +12,9 @@ let accumulatedReward = 0;
 let timerInterval;
 let processingTimer;
 
-// AdsGram Block ID
-const ADSGRAM_BLOCK_ID = "50163"; 
+// AdsGram Block IDs
+const ADSGRAM_BLOCK_FIRST = "int-50867";   // First Step အတွက်
+const ADSGRAM_BLOCK_FINAL = "50866";       // Final Step အတွက်
 
 // Adsterra Smart Links
 const SMART_LINKS = [
@@ -83,11 +84,9 @@ function startCountdown() {
         updateTimerDisplay();
         if (timeLeft <= 0) {
             clearInterval(timerInterval);
-            // Time 0 ဖြစ်မှ Processing ကို သွားမယ်
             if (tapCount > 0) {
                 showProcessingScreen();
             } else {
-                // Tap မရှိရင် ပြန် Reset
                 timeLeft = 10;
                 updateTimerDisplay();
                 startCountdown();
@@ -107,20 +106,13 @@ coinBtn.addEventListener('click', () => {
     if (isTapped) return;
     
     tapCount++;
-    // Tap တစ်ချက်နှိပ်တိုင်း 0.00001 တိုးမယ်
     accumulatedReward += 0.00001;
-    
     tapCountDisplay.textContent = tapCount;
     
-    // Visual Feedback
     coinBtn.style.transform = 'scale(0.9)';
     setTimeout(() => coinBtn.style.transform = 'scale(1)', 100);
 
-    // Tap 10 ချက်ပြည့်ရင် Timer ကို 0 ဖြစ်အောင် လုပ်မယ် (ဒါပေမယ့် Timer က အလိုအလျောက် 0 ဖြစ်တဲ့အထိ စောင့်မယ်)
     if (tapCount >= 10) {
-        // ဒီနေရာမှာ Timer ကို ချက်ချင်း 0 မလုပ်ဘူး။ 
-        // Timer က 0 ဖြစ်တဲ့အထိ စောင့်ပြီးမှ Processing ကို သွားမယ်။
-        // ဒါပေမယ့် Tap 10 ချက်ပြည့်ရင် ထပ်နှိပ်လို့ မရအောင် isTapped ကို true လုပ်ထားမယ်။
         isTapped = true;
     }
 });
@@ -148,40 +140,60 @@ function showFirstClaimScreen() {
     processingScreen.classList.add('hidden');
     firstClaimScreen.classList.remove('hidden');
     
-    // First Step Reward: 0.00003 to 0.00005
     const firstReward = (Math.random() * (0.00005 - 0.00003) + 0.00003);
     accumulatedReward += firstReward;
     firstRewardAmount.textContent = `$${firstReward.toFixed(5)}`;
 }
 
-// First Claim Button
-document.getElementById('firstClaimBtn').addEventListener('click', () => {
-    // Open Smart Link
+// First Claim Button (AdsGram int-50867)
+document.getElementById('firstClaimBtn').addEventListener('click', async () => {
     const randomLink = SMART_LINKS[Math.floor(Math.random() * SMART_LINKS.length)];
     window.open(randomLink, '_blank');
-    
-    // 5s စောင့်ပြီး Final Step ကို သွားမယ်
-    setTimeout(() => {
+
+    try {
+        const AdController = window.Adsgram?.init({ 
+            blockId: ADSGRAM_BLOCK_FIRST,
+            debug: true 
+        });
+
+        if (AdController) {
+            const result = await AdController.show();
+            if (result.done) {
+                firstClaimScreen.classList.add('hidden');
+                finalClaimScreen.classList.remove('hidden');
+                const finalReward = (Math.random() * (0.00005 - 0.00003) + 0.00003);
+                accumulatedReward += finalReward;
+                finalRewardAmount.textContent = `$${finalReward.toFixed(5)}`;
+            } else {
+                tg.showAlert("Ad was skipped. Please watch the full ad.");
+            }
+        } else {
+            // If SDK not loaded
+            firstClaimScreen.classList.add('hidden');
+            finalClaimScreen.classList.remove('hidden');
+            const finalReward = (Math.random() * (0.00005 - 0.00003) + 0.00003);
+            accumulatedReward += finalReward;
+            finalRewardAmount.textContent = `$${finalReward.toFixed(5)}`;
+        }
+    } catch (error) {
+        console.error("Ad error:", error);
+        // If error, proceed anyway
         firstClaimScreen.classList.add('hidden');
         finalClaimScreen.classList.remove('hidden');
-        
-        // Final Step Reward: 0.00003 to 0.00005
         const finalReward = (Math.random() * (0.00005 - 0.00003) + 0.00003);
         accumulatedReward += finalReward;
         finalRewardAmount.textContent = `$${finalReward.toFixed(5)}`;
-    }, 5000);
+    }
 });
 
-// Final Claim Button (AdsGram Integration)
+// Final Claim Button (AdsGram 50866)
 document.getElementById('finalClaimBtn').addEventListener('click', async () => {
-    // Open Smart Link
     const randomLink = SMART_LINKS[Math.floor(Math.random() * SMART_LINKS.length)];
     window.open(randomLink, '_blank');
 
-    // AdsGram
     try {
         const AdController = window.Adsgram?.init({ 
-            blockId: ADSGRAM_BLOCK_ID,
+            blockId: ADSGRAM_BLOCK_FINAL,
             debug: true 
         });
 
@@ -197,7 +209,6 @@ document.getElementById('finalClaimBtn').addEventListener('click', async () => {
         }
     } catch (error) {
         console.error("Ad error:", error);
-        // AdsGram Error တက်ရင်တောင် Reward ကို ပေးမယ် (Demo)
         tg.showAlert("Ad error. Claiming directly (Demo).");
         await claimReward();
     }
@@ -213,7 +224,6 @@ async function claimReward() {
         let currentBalance = 0;
         if (userSnap.exists()) currentBalance = userSnap.data().balance || 0;
         
-        // Total Reward = Tap Reward + First Step + Final Step
         const totalReward = accumulatedReward;
         const newBalance = currentBalance + totalReward;
         
@@ -222,7 +232,6 @@ async function claimReward() {
         
         tg.showAlert(`🎉 You earned $${totalReward.toFixed(5)}!`);
         
-        // ပြန် Reset လုပ်ပြီး Tap နေရာကနေ ပြန်စမယ်
         resetGameState();
     } catch (error) {
         tg.showAlert("Something went wrong.");
@@ -260,7 +269,6 @@ async function withdraw() {
         const balance = userSnap.data().balance || 0;
         if (balance < 1.00) return tg.showAlert("Minimum withdraw is $1.00");
         
-        // Withdraw Request
         await addDoc(collection(window.db, "withdrawals"), {
             userId: user.id.toString(),
             firstName: user.first_name || "User",
@@ -269,7 +277,6 @@ async function withdraw() {
             requestedAt: new Date().toISOString()
         });
 
-        // Balance ကို သုည လုပ်ပါ
         await updateDoc(userRef, {
             balance: 0,
             lastWithdraw: new Date().toISOString()
@@ -277,7 +284,6 @@ async function withdraw() {
         
         userBalanceSpan.textContent = "$0.00000";
 
-        // Telegram Channel
         const BOT_TOKEN = "8982916798:AAFl1DhvrjpV_RhYmb9B-1dVfL8lDqkk93A"; 
         const CHAT_ID = "-1004291919386";
         const message = `🔔 New Withdraw Request\n👤 User: ${user.first_name} (${user.id})\n💰 Amount: $${balance.toFixed(5)}`;
