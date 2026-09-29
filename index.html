@@ -6,10 +6,8 @@
     <title>Tap to Earn</title>
     <link rel="stylesheet" href="style.css">
     
-    <!-- Telegram Web App SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
         import { getFirestore } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
@@ -29,10 +27,8 @@
         window.db = db;
     </script>
 
-    <!-- AdsGram SDK -->
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 
-    <!-- Anti-Hack Script -->
     <script>
         document.addEventListener('contextmenu', event => event.preventDefault());
         document.onkeydown = function(e) {
@@ -45,29 +41,26 @@
 </head>
 <body>
 
-    <!-- Adsterra Smart Links (Hidden) -->
     <div style="display:none;">
         <script data-cfasync="false" src="https://abscloud.org/1/6d1b42cc7ed3b78f3794b14f1475296b"></script>
         <script data-cfasync="false" src="https://bauval.org/14/985fbe3f48c3058f30113847af7bb387"></script>
     </div>
 
-    <!-- User Info -->
     <div id="userInfo" class="user-info">
         <div class="user-badge">
             <span class="user-icon">👤</span>
             <span id="userName">User</span>
         </div>
         <div class="balance-badge">
-            <span class="balance-icon">💰</span>
-            <span id="userBalance">$0.00000</span>
+            <span class="balance-icon">💎</span>
+            <span id="userBalance">0</span>
         </div>
     </div>
 
-    <!-- Main Tap Area -->
     <div class="container" id="mainContainer">
         <div class="header-text">
             <h1>TAP TO EARN</h1>
-            <p class="subtitle">YOUR BONUS!</p>
+            <p class="subtitle">COLLECT GEMS!</p>
         </div>
         
         <div class="timer-box">
@@ -78,8 +71,8 @@
 
         <div class="coin-container">
             <div class="coin-glow"></div>
-            <div class="coin" id="coinBtn">
-                <span class="dollar-sign">$</span>
+            <div class="gem" id="coinBtn">
+                <span class="gem-icon">💎</span>
                 <div class="hand-icon">👆</div>
             </div>
         </div>
@@ -94,7 +87,6 @@
         </div>
     </div>
 
-    <!-- Processing Screen -->
     <div id="processingScreen" class="screen-container hidden">
         <div class="screen-content">
             <div class="processing-icon">⚙️</div>
@@ -104,29 +96,26 @@
         </div>
     </div>
 
-    <!-- First Claim Screen -->
     <div id="firstClaimScreen" class="screen-container hidden">
         <div class="screen-content">
             <div class="success-icon">🎉</div>
             <h2>STEP 1 COMPLETE</h2>
-            <p>You earned <span id="firstRewardAmount" class="reward-text">$0.00</span></p>
+            <p>You collected <span id="firstRewardAmount" class="reward-text">0 Gems</span></p>
             <p class="unlock-text">CONTINUE TO NEXT STEP</p>
             <button class="action-btn" id="firstClaimBtn">CONTINUE</button>
         </div>
     </div>
 
-    <!-- Final Claim Screen -->
     <div id="finalClaimScreen" class="screen-container hidden">
         <div class="screen-content">
             <div class="success-icon">🏆</div>
             <h2>FINAL STEP</h2>
-            <p>You earned <span id="finalRewardAmount" class="reward-text">$0.00</span></p>
+            <p>You collected <span id="finalRewardAmount" class="reward-text">0 Gems</span></p>
             <p class="unlock-text">CONTINUE TO CLAIM REWARD</p>
             <button class="action-btn" id="finalClaimBtn">CLAIM REWARD</button>
         </div>
     </div>
 
-    <!-- History Modal -->
     <div id="historyModal" class="modal hidden">
         <div class="modal-content">
             <h3>📜 Withdraw History</h3>
@@ -135,7 +124,6 @@
         </div>
     </div>
 
-    <!-- Bottom Navigation -->
     <div class="bottom-nav">
         <button class="nav-btn" onclick="showHistory()">
             <span class="nav-icon">📜</span>
