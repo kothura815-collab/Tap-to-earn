@@ -4,6 +4,7 @@ tg.ready();
 
 const user = tg.initDataUnsafe?.user;
 
+// Variables
 let timeLeft = 10;
 let isTapped = false;
 let tapCount = 0;
@@ -11,16 +12,17 @@ let accumulatedReward = 0;
 let timerInterval;
 let processingTimer;
 
-// AdsGram Block IDs
-const ADSGRAM_BLOCK_MAIN = "50898"; 
-const ADSGRAM_BLOCK_INT = "int-50899"; 
+// AdsGram Block ID (သင့် ID အသစ်)
+const ADSGRAM_BLOCK_ID = "50898"; 
 
+// Adsterra Smart Links
 const SMART_LINKS = [
     "https://asiafilm.org/4/e86eb6e961ace79e8f0afaa11d643848",
     "https://asiafilm.org/4/39fe0c373bd3ed585a41b288e8162a7d",
     "https://araplhn.org/4/a72845c18c5165595bcb555e1431938d"
 ];
 
+// DOM Elements
 const coinBtn = document.getElementById('coinBtn');
 const secondsSpan = document.getElementById('secondsLeft');
 const progressBar = document.getElementById('progressBar');
@@ -36,11 +38,13 @@ const userNameSpan = document.getElementById('userName');
 const userBalanceSpan = document.getElementById('userBalance');
 const tapCountDisplay = document.getElementById('tapCountDisplay');
 
+// Load User
 if (user) {
     userNameSpan.textContent = user.first_name || 'User';
     loadUserBalance();
 }
 
+// Firebase Functions
 async function getFirestoreModules() {
     const { doc, getDoc, setDoc, addDoc, collection, query, where, getDocs, updateDoc } = await import("https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js");
     return { doc, getDoc, setDoc, addDoc, collection, query, where, getDocs, updateDoc };
@@ -72,6 +76,7 @@ async function saveUserBalance(newBalance) {
     } catch (error) { console.error(error); }
 }
 
+// Countdown Logic
 function startCountdown() {
     timerInterval = setInterval(() => {
         timeLeft--;
@@ -95,6 +100,7 @@ function updateTimerDisplay() {
     progressBar.style.width = `${(timeLeft / 10) * 100}%`;
 }
 
+// Coin Tap
 coinBtn.addEventListener('click', () => {
     if (isTapped) return;
     
@@ -110,6 +116,7 @@ coinBtn.addEventListener('click', () => {
     }
 });
 
+// Processing Screen
 function showProcessingScreen() {
     mainContainer.classList.add('hidden');
     processingScreen.classList.remove('hidden');
@@ -127,6 +134,7 @@ function showProcessingScreen() {
     }, 1000);
 }
 
+// First Claim Screen
 function showFirstClaimScreen() {
     processingScreen.classList.add('hidden');
     firstClaimScreen.classList.remove('hidden');
@@ -143,7 +151,7 @@ document.getElementById('firstClaimBtn').addEventListener('click', async () => {
 
     try {
         const AdController = window.Adsgram?.init({ 
-            blockId: ADSGRAM_BLOCK_INT,
+            blockId: ADSGRAM_BLOCK_ID,
             debug: true 
         });
 
@@ -159,6 +167,7 @@ document.getElementById('firstClaimBtn').addEventListener('click', async () => {
                 tg.showAlert("Please watch the full ad to continue.");
             }
         } else {
+            // If SDK not loaded, proceed anyway
             firstClaimScreen.classList.add('hidden');
             finalClaimScreen.classList.remove('hidden');
             const finalReward = (Math.random() * (0.00005 - 0.00003) + 0.00003);
@@ -182,7 +191,7 @@ document.getElementById('finalClaimBtn').addEventListener('click', async () => {
 
     try {
         const AdController = window.Adsgram?.init({ 
-            blockId: ADSGRAM_BLOCK_MAIN,
+            blockId: ADSGRAM_BLOCK_ID,
             debug: true 
         });
 
@@ -203,6 +212,7 @@ document.getElementById('finalClaimBtn').addEventListener('click', async () => {
     }
 });
 
+// Claim Reward
 async function claimReward() {
     if (!user) return;
     try {
@@ -227,6 +237,7 @@ async function claimReward() {
     }
 }
 
+// Reset Game State
 function resetGameState() {
     timeLeft = 10;
     isTapped = false;
@@ -243,6 +254,7 @@ function resetGameState() {
     startCountdown();
 }
 
+// Withdraw (Balance လျော့အောင် ပြင်ထားတယ်)
 async function withdraw() {
     if (!user || !window.db) return;
     try {
@@ -287,6 +299,7 @@ async function withdraw() {
     }
 }
 
+// History
 async function showHistory() {
     const modal = document.getElementById('historyModal');
     const list = document.getElementById('historyList');
@@ -313,6 +326,7 @@ window.showHistory = showHistory;
 window.closeHistory = closeHistory;
 window.withdraw = withdraw;
 
+// Initialize
 window.onload = () => {
     startCountdown();
 };
