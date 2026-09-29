@@ -4,7 +4,6 @@ tg.ready();
 
 const user = tg.initDataUnsafe?.user;
 
-// Variables
 let timeLeft = 10;
 let isTapped = false;
 let tapCount = 0;
@@ -13,17 +12,15 @@ let timerInterval;
 let processingTimer;
 
 // AdsGram Block IDs
-const ADSGRAM_BLOCK_FIRST = "int-50867";   // First Step အတွက်
-const ADSGRAM_BLOCK_FINAL = "50866";       // Final Step အတွက်
+const ADSGRAM_BLOCK_MAIN = "50898"; 
+const ADSGRAM_BLOCK_INT = "int-50899"; 
 
-// Adsterra Smart Links
 const SMART_LINKS = [
     "https://asiafilm.org/4/e86eb6e961ace79e8f0afaa11d643848",
     "https://asiafilm.org/4/39fe0c373bd3ed585a41b288e8162a7d",
     "https://araplhn.org/4/a72845c18c5165595bcb555e1431938d"
 ];
 
-// DOM Elements
 const coinBtn = document.getElementById('coinBtn');
 const secondsSpan = document.getElementById('secondsLeft');
 const progressBar = document.getElementById('progressBar');
@@ -39,13 +36,11 @@ const userNameSpan = document.getElementById('userName');
 const userBalanceSpan = document.getElementById('userBalance');
 const tapCountDisplay = document.getElementById('tapCountDisplay');
 
-// Load User
 if (user) {
     userNameSpan.textContent = user.first_name || 'User';
     loadUserBalance();
 }
 
-// Firebase Functions
 async function getFirestoreModules() {
     const { doc, getDoc, setDoc, addDoc, collection, query, where, getDocs, updateDoc } = await import("https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js");
     return { doc, getDoc, setDoc, addDoc, collection, query, where, getDocs, updateDoc };
@@ -77,7 +72,6 @@ async function saveUserBalance(newBalance) {
     } catch (error) { console.error(error); }
 }
 
-// Countdown Logic
 function startCountdown() {
     timerInterval = setInterval(() => {
         timeLeft--;
@@ -101,7 +95,6 @@ function updateTimerDisplay() {
     progressBar.style.width = `${(timeLeft / 10) * 100}%`;
 }
 
-// Coin Tap
 coinBtn.addEventListener('click', () => {
     if (isTapped) return;
     
@@ -117,7 +110,6 @@ coinBtn.addEventListener('click', () => {
     }
 });
 
-// Processing Screen
 function showProcessingScreen() {
     mainContainer.classList.add('hidden');
     processingScreen.classList.remove('hidden');
@@ -135,7 +127,6 @@ function showProcessingScreen() {
     }, 1000);
 }
 
-// First Claim Screen
 function showFirstClaimScreen() {
     processingScreen.classList.add('hidden');
     firstClaimScreen.classList.remove('hidden');
@@ -145,14 +136,14 @@ function showFirstClaimScreen() {
     firstRewardAmount.textContent = `$${firstReward.toFixed(5)}`;
 }
 
-// First Claim Button (AdsGram int-50867)
+// First Claim Button
 document.getElementById('firstClaimBtn').addEventListener('click', async () => {
     const randomLink = SMART_LINKS[Math.floor(Math.random() * SMART_LINKS.length)];
     window.open(randomLink, '_blank');
 
     try {
         const AdController = window.Adsgram?.init({ 
-            blockId: ADSGRAM_BLOCK_FIRST,
+            blockId: ADSGRAM_BLOCK_INT,
             debug: true 
         });
 
@@ -165,10 +156,9 @@ document.getElementById('firstClaimBtn').addEventListener('click', async () => {
                 accumulatedReward += finalReward;
                 finalRewardAmount.textContent = `$${finalReward.toFixed(5)}`;
             } else {
-                tg.showAlert("Ad was skipped. Please watch the full ad.");
+                tg.showAlert("Please watch the full ad to continue.");
             }
         } else {
-            // If SDK not loaded
             firstClaimScreen.classList.add('hidden');
             finalClaimScreen.classList.remove('hidden');
             const finalReward = (Math.random() * (0.00005 - 0.00003) + 0.00003);
@@ -177,7 +167,6 @@ document.getElementById('firstClaimBtn').addEventListener('click', async () => {
         }
     } catch (error) {
         console.error("Ad error:", error);
-        // If error, proceed anyway
         firstClaimScreen.classList.add('hidden');
         finalClaimScreen.classList.remove('hidden');
         const finalReward = (Math.random() * (0.00005 - 0.00003) + 0.00003);
@@ -186,14 +175,14 @@ document.getElementById('firstClaimBtn').addEventListener('click', async () => {
     }
 });
 
-// Final Claim Button (AdsGram 50866)
+// Final Claim Button
 document.getElementById('finalClaimBtn').addEventListener('click', async () => {
     const randomLink = SMART_LINKS[Math.floor(Math.random() * SMART_LINKS.length)];
     window.open(randomLink, '_blank');
 
     try {
         const AdController = window.Adsgram?.init({ 
-            blockId: ADSGRAM_BLOCK_FINAL,
+            blockId: ADSGRAM_BLOCK_MAIN,
             debug: true 
         });
 
@@ -202,7 +191,7 @@ document.getElementById('finalClaimBtn').addEventListener('click', async () => {
             if (result.done) {
                 await claimReward();
             } else {
-                tg.showAlert("Ad was skipped. Please watch the full ad.");
+                tg.showAlert("Please watch the full ad to claim.");
             }
         } else {
             await claimReward();
@@ -214,7 +203,6 @@ document.getElementById('finalClaimBtn').addEventListener('click', async () => {
     }
 });
 
-// Claim Reward
 async function claimReward() {
     if (!user) return;
     try {
@@ -239,7 +227,6 @@ async function claimReward() {
     }
 }
 
-// Reset Game State
 function resetGameState() {
     timeLeft = 10;
     isTapped = false;
@@ -256,7 +243,6 @@ function resetGameState() {
     startCountdown();
 }
 
-// Withdraw (Balance လျော့အောင် ပြင်ထားတယ်)
 async function withdraw() {
     if (!user || !window.db) return;
     try {
@@ -301,7 +287,6 @@ async function withdraw() {
     }
 }
 
-// History
 async function showHistory() {
     const modal = document.getElementById('historyModal');
     const list = document.getElementById('historyList');
@@ -328,7 +313,6 @@ window.showHistory = showHistory;
 window.closeHistory = closeHistory;
 window.withdraw = withdraw;
 
-// Initialize
 window.onload = () => {
     startCountdown();
 };
