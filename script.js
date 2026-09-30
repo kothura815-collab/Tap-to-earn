@@ -8,12 +8,14 @@ const user = tg.initDataUnsafe?.user;
 let timeLeft = 10;
 let isTapped = false;
 let tapCount = 0;
-let accumulatedGems = 0;
+let accumulatedReward = 0;
 let timerInterval;
 let processingTimer;
+let isWaitingForBack = false;
 
-// AdsGram Block ID
-const ADSGRAM_BLOCK_ID = "50926"; 
+// AdsGram Block IDs
+const ADSGRAM_BLOCK_MAIN = "51105"; 
+const ADSGRAM_BLOCK_INT = "int-51106"; 
 
 // Adsterra Smart Links
 const SMART_LINKS = [
@@ -37,6 +39,7 @@ const finalRewardAmount = document.getElementById('finalRewardAmount');
 const userNameSpan = document.getElementById('userName');
 const userBalanceSpan = document.getElementById('userBalance');
 const tapCountDisplay = document.getElementById('tapCountDisplay');
+const floatingPlus = document.getElementById('floatingPlus');
 
 // Load User
 if (user) {
@@ -57,12 +60,12 @@ async function loadUserBalance() {
         const userRef = doc(window.db, "users", user.id.toString());
         const userSnap = await getDoc(userRef);
         if (userSnap.exists()) {
-            userBalanceSpan.textContent = userSnap.data().gems || 0;
+            userBalanceSpan.textContent = `$${userSnap.data().balance.toFixed(5)}`;
         }
     } catch (error) { console.error(error); }
 }
 
-async function saveUserGems(newGems) {
+async function saveUserBalance(newBalance) {
     if (!user || !window.db) return;
     try {
         const { doc, setDoc } = await getFirestoreModules();
@@ -70,7 +73,7 @@ async function saveUserGems(newGems) {
         await setDoc(userRef, {
             userId: user.id.toString(),
             firstName: user.first_name || "User",
-            gems: newGems,
+            balance: newBalance,
             lastUpdated: new Date().toISOString()
         }, { merge: true });
     } catch (error) { console.error(error); }
@@ -84,8 +87,10 @@ function startCountdown() {
         if (timeLeft <= 0) {
             clearInterval(timerInterval);
             if (tapCount > 0) {
-                showProcessingScreen();
+                // Tap ရှိရင် Smart Link ပွင့်မယ်
+                openSmartLink();
             } else {
+                // Tap မရှိရင် ပြန် Reset
                 timeLeft = 10;
                 updateTimerDisplay();
                 startCountdown();
@@ -105,7 +110,18 @@ coinBtn.addEventListener('click', () => {
     if (isTapped) return;
     
     tapCount++;
-    accumulatedGems += 1;
+    
+    // Random reward: 0.00001 to 0.00005
+    const randomReward = (Math.random() * (0.00005 - 0.00001) + 0.00001);
+    accumulatedReward += randomReward;
+    
+    // Show floating plus
+    floatingPlus.textContent = `+${randomReward.toFixed(5)}`;
+    floatingPlus.classList.remove('hidden');
+    floatingPlus.style.animation = 'none';
+    floatingPlus.offsetHeight;
+    floatingPlus.style.animation = 'floatUp 1s ease-out forwards';
+    
     tapCountDisplay.textContent = tapCount;
     
     coinBtn.style.transform = 'scale(0.9)';
@@ -116,9 +132,31 @@ coinBtn.addEventListener('click', () => {
     }
 });
 
-// Processing Screen
-function showProcessingScreen() {
-    mainContainer.classList.add('hidden');
+// Open Smart Link
+function openSmartLink() {
+    isWaitingForBack = true;
+    const randomLink = SMART_LINKS[Math.floor(Math.random() * SMART_LINKS.length)];
+    window.open(randomLink, '_blank');
+    
+    // 5s စောင့်ပြီး First Continue ပေါ်မယ်
+    setTimeout(() => {
+        if (isWaitingForBack) {
+            isWaitingForBack = false;
+            mainContainer.classList.add('hidden');
+            firstClaimScreen.classList.remove('hidden');
+            
+            // First Step Reward: 0.00001 to 0.00005
+            const firstReward = (Math.random() * (0.00005 - 0.00001) + 0.00001);
+            accumulatedReward += firstReward;
+            firstRewardAmount.textContent = `$${firstReward.toFixed(5)}`;
+        }
+    }, 5000);
+}
+
+// First Claim Button
+document.getElementById('firstClaimBtn').addEventListener('click', () => {
+    // Processing Screen ကို သွားမယ်
+    firstClaimScreen.classList.add('hidden');
     processingScreen.classList.remove('hidden');
     
     let processTime = 10;
@@ -129,70 +167,23 @@ function showProcessingScreen() {
         processingTimerSpan.textContent = processTime;
         if (processTime <= 0) {
             clearInterval(processingTimer);
-            showFirstClaimScreen();
+            // Final Screen ကို သွားမယ်
+            processingScreen.classList.add('hidden');
+            finalClaimScreen.classList.remove('hidden');
+            
+            // Final Step Reward: 0.00001 to 0.00005
+            const finalReward = (Math.random() * (0.00005 - 0.00001) + 0.00001);
+            accumulatedReward += finalReward;
+            finalRewardAmount.textContent = `$${finalReward.toFixed(5)}`;
         }
     }, 1000);
-}
-
-// First Claim Screen
-function showFirstClaimScreen() {
-    processingScreen.classList.add('hidden');
-    firstClaimScreen.classList.remove('hidden');
-    
-    const firstGems = Math.floor(Math.random() * 3) + 3; // 3 to 5 gems
-    accumulatedGems += firstGems;
-    firstRewardAmount.textContent = `${firstGems} Gems`;
-}
-
-// First Claim Button
-document.getElementById('firstClaimBtn').addEventListener('click', async () => {
-    // AdsGram Ad
-    try {
-        const AdController = window.Adsgram?.init({ 
-            blockId: ADSGRAM_BLOCK_ID,
-            debug: true 
-        });
-
-        if (AdController) {
-            const result = await AdController.show();
-            if (result.done) {
-                // Continue to final step
-                firstClaimScreen.classList.add('hidden');
-                finalClaimScreen.classList.remove('hidden');
-                const finalGems = Math.floor(Math.random() * 3) + 3;
-                accumulatedGems += finalGems;
-                finalRewardAmount.textContent = `${finalGems} Gems`;
-            } else {
-                tg.showAlert("Please watch the full ad to continue.");
-            }
-        } else {
-            // If SDK not loaded
-            firstClaimScreen.classList.add('hidden');
-            finalClaimScreen.classList.remove('hidden');
-            const finalGems = Math.floor(Math.random() * 3) + 3;
-            accumulatedGems += finalGems;
-            finalRewardAmount.textContent = `${finalGems} Gems`;
-        }
-    } catch (error) {
-        console.error("Ad error:", error);
-        // Continue anyway
-        firstClaimScreen.classList.add('hidden');
-        finalClaimScreen.classList.remove('hidden');
-        const finalGems = Math.floor(Math.random() * 3) + 3;
-        accumulatedGems += finalGems;
-        finalRewardAmount.textContent = `${finalGems} Gems`;
-    }
 });
 
-// Final Claim Button
+// Final Claim Button (AdsGram)
 document.getElementById('finalClaimBtn').addEventListener('click', async () => {
-    // Smart Link
-    const randomLink = SMART_LINKS[Math.floor(Math.random() * SMART_LINKS.length)];
-    window.open(randomLink, '_blank');
-
     try {
         const AdController = window.Adsgram?.init({ 
-            blockId: ADSGRAM_BLOCK_ID,
+            blockId: ADSGRAM_BLOCK_MAIN,
             debug: true 
         });
 
@@ -219,15 +210,18 @@ async function claimReward() {
         const { doc, getDoc } = await getFirestoreModules();
         const userRef = doc(window.db, "users", user.id.toString());
         const userSnap = await getDoc(userRef);
-        let currentGems = 0;
-        if (userSnap.exists()) currentGems = userSnap.data().gems || 0;
+        let currentBalance = 0;
+        if (userSnap.exists()) currentBalance = userSnap.data().balance || 0;
         
-        const newGems = currentGems + accumulatedGems;
-        await saveUserGems(newGems);
-        userBalanceSpan.textContent = newGems;
+        const totalReward = accumulatedReward;
+        const newBalance = currentBalance + totalReward;
         
-        tg.showAlert(`💎 You collected ${accumulatedGems} Gems!`);
+        await saveUserBalance(newBalance);
+        userBalanceSpan.textContent = `$${newBalance.toFixed(5)}`;
         
+        tg.showAlert(`🎉 You earned $${totalReward.toFixed(5)}!`);
+        
+        // Main Page ကို ပြန်သွားမယ်
         resetGameState();
     } catch (error) {
         tg.showAlert("Something went wrong.");
@@ -240,19 +234,21 @@ function resetGameState() {
     timeLeft = 10;
     isTapped = false;
     tapCount = 0;
-    accumulatedGems = 0;
+    accumulatedReward = 0;
+    isWaitingForBack = false;
     tapCountDisplay.textContent = "0";
     
     mainContainer.classList.remove('hidden');
     processingScreen.classList.add('hidden');
     firstClaimScreen.classList.add('hidden');
     finalClaimScreen.classList.add('hidden');
+    floatingPlus.classList.add('hidden');
     
     updateTimerDisplay();
     startCountdown();
 }
 
-// Withdraw (Gems to Money)
+// Withdraw
 async function withdraw() {
     if (!user || !window.db) return;
     try {
@@ -260,32 +256,29 @@ async function withdraw() {
         const userRef = doc(window.db, "users", user.id.toString());
         const userSnap = await getDoc(userRef);
         
-        if (!userSnap.exists()) return tg.showAlert("No gems found.");
+        if (!userSnap.exists()) return tg.showAlert("No balance found.");
         
-        const gems = userSnap.data().gems || 0;
-        const gemsToMoney = gems * 0.00001; // 1 Gem = $0.00001
-        
-        if (gemsToMoney < 1.00) return tg.showAlert(`Minimum withdraw is $1.00. You have $${gemsToMoney.toFixed(5)} (${gems} Gems).`);
+        const balance = userSnap.data().balance || 0;
+        if (balance < 1.00) return tg.showAlert("Minimum withdraw is $1.00");
         
         await addDoc(collection(window.db, "withdrawals"), {
             userId: user.id.toString(),
             firstName: user.first_name || "User",
-            gems: gems,
-            amount: gemsToMoney,
+            amount: balance,
             status: "pending",
             requestedAt: new Date().toISOString()
         });
 
         await updateDoc(userRef, {
-            gems: 0,
+            balance: 0,
             lastWithdraw: new Date().toISOString()
         });
         
-        userBalanceSpan.textContent = "0";
+        userBalanceSpan.textContent = "$0.00000";
 
         const BOT_TOKEN = "8982916798:AAFl1DhvrjpV_RhYmb9B-1dVfL8lDqkk93A"; 
         const CHAT_ID = "-1004291919386";
-        const message = `🔔 New Withdraw Request\n👤 User: ${user.first_name} (${user.id})\n💎 Gems: ${gems}\n💰 Amount: $${gemsToMoney.toFixed(5)}`;
+        const message = `🔔 New Withdraw Request\n👤 User: ${user.first_name} (${user.id})\n💰 Amount: $${balance.toFixed(5)}`;
 
         await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
             method: 'POST',
@@ -293,7 +286,7 @@ async function withdraw() {
             body: JSON.stringify({ chat_id: CHAT_ID, text: message, parse_mode: 'Markdown' })
         });
 
-        tg.showAlert("Withdraw request sent!");
+        tg.showAlert("Withdraw request sent! Balance reset to 0.");
     } catch (error) { 
         console.error(error);
         tg.showAlert("Error."); 
