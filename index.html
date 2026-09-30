@@ -52,15 +52,15 @@
             <span id="userName">User</span>
         </div>
         <div class="balance-badge">
-            <span class="balance-icon">💎</span>
-            <span id="userBalance">0</span>
+            <span class="balance-icon">💰</span>
+            <span id="userBalance">$0.00000</span>
         </div>
     </div>
 
     <div class="container" id="mainContainer">
         <div class="header-text">
             <h1>TAP TO EARN</h1>
-            <p class="subtitle">COLLECT GEMS!</p>
+            <p class="subtitle">YOUR BONUS!</p>
         </div>
         
         <div class="timer-box">
@@ -71,11 +71,14 @@
 
         <div class="coin-container">
             <div class="coin-glow"></div>
-            <div class="gem" id="coinBtn">
-                <span class="gem-icon">💎</span>
+            <div class="coin" id="coinBtn">
+                <span class="dollar-sign">$</span>
                 <div class="hand-icon">👆</div>
             </div>
         </div>
+
+        <!-- Floating Plus Display -->
+        <div id="floatingPlus" class="floating-plus hidden">+0.00000</div>
 
         <div class="progress-container" id="progressContainer">
             <div class="progress-bar" id="progressBar"></div>
@@ -87,6 +90,7 @@
         </div>
     </div>
 
+    <!-- Processing Screen -->
     <div id="processingScreen" class="screen-container hidden">
         <div class="screen-content">
             <div class="processing-icon">⚙️</div>
@@ -96,26 +100,29 @@
         </div>
     </div>
 
+    <!-- First Claim Screen -->
     <div id="firstClaimScreen" class="screen-container hidden">
         <div class="screen-content">
             <div class="success-icon">🎉</div>
             <h2>STEP 1 COMPLETE</h2>
-            <p>You collected <span id="firstRewardAmount" class="reward-text">0 Gems</span></p>
+            <p>You earned <span id="firstRewardAmount" class="reward-text">$0.00</span></p>
             <p class="unlock-text">CONTINUE TO NEXT STEP</p>
             <button class="action-btn" id="firstClaimBtn">CONTINUE</button>
         </div>
     </div>
 
+    <!-- Final Claim Screen -->
     <div id="finalClaimScreen" class="screen-container hidden">
         <div class="screen-content">
             <div class="success-icon">🏆</div>
             <h2>FINAL STEP</h2>
-            <p>You collected <span id="finalRewardAmount" class="reward-text">0 Gems</span></p>
+            <p>You earned <span id="finalRewardAmount" class="reward-text">$0.00</span></p>
             <p class="unlock-text">CONTINUE TO CLAIM REWARD</p>
             <button class="action-btn" id="finalClaimBtn">CLAIM REWARD</button>
         </div>
     </div>
 
+    <!-- History Modal -->
     <div id="historyModal" class="modal hidden">
         <div class="modal-content">
             <h3>📜 Withdraw History</h3>
@@ -124,6 +131,7 @@
         </div>
     </div>
 
+    <!-- Bottom Navigation -->
     <div class="bottom-nav">
         <button class="nav-btn" onclick="showHistory()">
             <span class="nav-icon">📜</span>
