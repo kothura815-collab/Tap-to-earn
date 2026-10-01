@@ -15,9 +15,8 @@ let timerInterval;
 let processingTimer;
 let isWaitingForBack = false;
 
-// AdsGram Block IDs (New)
-const ADSGRAM_BLOCK_MAIN = "51279";   // Final Step
-const ADSGRAM_BLOCK_INT = "int-51280"; // First Step (Interstitial)
+// AdsGram Block ID (Main only)
+const ADSGRAM_BLOCK_ID = "51279";
 
 // Adsterra Smart Links
 const SMART_LINKS = [
@@ -51,6 +50,8 @@ const floatingPlus = document.getElementById('floatingPlus');
 if (user) {
     userNameSpan.textContent = user.first_name || 'User';
     loadUserBalance();
+} else {
+    userNameSpan.textContent = 'Guest';
 }
 
 // ==========================================
@@ -70,7 +71,7 @@ async function loadUserBalance() {
         if (userSnap.exists()) {
             userBalanceSpan.textContent = `$${userSnap.data().balance.toFixed(5)}`;
         }
-    } catch (error) { console.error(error); }
+    } catch (error) { console.error("Load balance error:", error); }
 }
 
 async function saveUserBalance(newBalance) {
@@ -84,7 +85,7 @@ async function saveUserBalance(newBalance) {
             balance: newBalance,
             lastUpdated: new Date().toISOString()
         }, { merge: true });
-    } catch (error) { console.error(error); }
+    } catch (error) { console.error("Save balance error:", error); }
 }
 
 // ==========================================
@@ -166,81 +167,30 @@ function openSmartLink() {
 }
 
 // ==========================================
-// First Claim Button (AdsGram int-51280)
+// First Claim Button (No AdsGram here - just proceed)
 // ==========================================
-document.getElementById('firstClaimBtn').addEventListener('click', async () => {
-    try {
-        const AdController = window.Adsgram?.init({ 
-            blockId: ADSGRAM_BLOCK_INT,
-            debug: true 
-        });
-
-        if (AdController) {
-            const result = await AdController.show();
-            if (result.done) {
-                // Show Processing Screen
-                firstClaimScreen.classList.add('hidden');
-                processingScreen.classList.remove('hidden');
-                
-                let processTime = 10;
-                processingTimerSpan.textContent = processTime;
-                
-                processingTimer = setInterval(() => {
-                    processTime--;
-                    processingTimerSpan.textContent = processTime;
-                    if (processTime <= 0) {
-                        clearInterval(processingTimer);
-                        // Show Final Screen
-                        processingScreen.classList.add('hidden');
-                        finalClaimScreen.classList.remove('hidden');
-                        
-                        const finalReward = (Math.random() * (0.00005 - 0.00001) + 0.00001);
-                        accumulatedReward += finalReward;
-                        finalRewardAmount.textContent = `$${finalReward.toFixed(5)}`;
-                    }
-                }, 1000);
-            } else {
-                tg.showAlert("Please watch the full ad to continue.");
-            }
-        } else {
-            // If SDK not loaded, proceed
-            firstClaimScreen.classList.add('hidden');
-            processingScreen.classList.remove('hidden');
-            let processTime = 10;
-            processingTimerSpan.textContent = processTime;
-            processingTimer = setInterval(() => {
-                processTime--;
-                processingTimerSpan.textContent = processTime;
-                if (processTime <= 0) {
-                    clearInterval(processingTimer);
-                    processingScreen.classList.add('hidden');
-                    finalClaimScreen.classList.remove('hidden');
-                    const finalReward = (Math.random() * (0.00005 - 0.00001) + 0.00001);
-                    accumulatedReward += finalReward;
-                    finalRewardAmount.textContent = `$${finalReward.toFixed(5)}`;
-                }
-            }, 1000);
-        }
-    } catch (error) {
-        console.error("Ad error:", error);
-        // Proceed anyway
-        firstClaimScreen.classList.add('hidden');
-        processingScreen.classList.remove('hidden');
-        let processTime = 10;
+document.getElementById('firstClaimBtn').addEventListener('click', () => {
+    // Show Processing Screen
+    firstClaimScreen.classList.add('hidden');
+    processingScreen.classList.remove('hidden');
+    
+    let processTime = 10;
+    processingTimerSpan.textContent = processTime;
+    
+    processingTimer = setInterval(() => {
+        processTime--;
         processingTimerSpan.textContent = processTime;
-        processingTimer = setInterval(() => {
-            processTime--;
-            processingTimerSpan.textContent = processTime;
-            if (processTime <= 0) {
-                clearInterval(processingTimer);
-                processingScreen.classList.add('hidden');
-                finalClaimScreen.classList.remove('hidden');
-                const finalReward = (Math.random() * (0.00005 - 0.00001) + 0.00001);
-                accumulatedReward += finalReward;
-                finalRewardAmount.textContent = `$${finalReward.toFixed(5)}`;
-            }
-        }, 1000);
-    }
+        if (processTime <= 0) {
+            clearInterval(processingTimer);
+            // Show Final Screen
+            processingScreen.classList.add('hidden');
+            finalClaimScreen.classList.remove('hidden');
+            
+            const finalReward = (Math.random() * (0.00005 - 0.00001) + 0.00001);
+            accumulatedReward += finalReward;
+            finalRewardAmount.textContent = `$${finalReward.toFixed(5)}`;
+        }
+    }, 1000);
 });
 
 // ==========================================
@@ -249,7 +199,7 @@ document.getElementById('firstClaimBtn').addEventListener('click', async () => {
 document.getElementById('finalClaimBtn').addEventListener('click', async () => {
     try {
         const AdController = window.Adsgram?.init({ 
-            blockId: ADSGRAM_BLOCK_MAIN,
+            blockId: ADSGRAM_BLOCK_ID,
             debug: true 
         });
 
@@ -261,10 +211,12 @@ document.getElementById('finalClaimBtn').addEventListener('click', async () => {
                 tg.showAlert("Please watch the full ad to claim.");
             }
         } else {
+            // If SDK not loaded, claim directly
             await claimReward();
         }
     } catch (error) {
         console.error("Ad error:", error);
+        // If error, claim directly
         await claimReward();
     }
 });
@@ -273,7 +225,11 @@ document.getElementById('finalClaimBtn').addEventListener('click', async () => {
 // Claim Reward
 // ==========================================
 async function claimReward() {
-    if (!user) return;
+    if (!user) {
+        tg.showAlert("User not found.");
+        resetGameState();
+        return;
+    }
     try {
         const { doc, getDoc } = await getFirestoreModules();
         const userRef = doc(window.db, "users", user.id.toString());
@@ -291,6 +247,7 @@ async function claimReward() {
         
         resetGameState();
     } catch (error) {
+        console.error("Claim error:", error);
         tg.showAlert("Something went wrong.");
         resetGameState();
     }
@@ -359,7 +316,7 @@ async function withdraw() {
 
         tg.showAlert("Withdraw request sent! Balance reset to 0.");
     } catch (error) { 
-        console.error(error);
+        console.error("Withdraw error:", error);
         tg.showAlert("Error."); 
     }
 }
