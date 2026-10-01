@@ -6,8 +6,10 @@
     <title>Tap to Earn</title>
     <link rel="stylesheet" href="style.css">
     
+    <!-- Telegram Web App SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
+    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
         import { getFirestore } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
@@ -27,8 +29,10 @@
         window.db = db;
     </script>
 
+    <!-- AdsGram SDK -->
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 
+    <!-- Anti-Hack Script -->
     <script>
         document.addEventListener('contextmenu', event => event.preventDefault());
         document.onkeydown = function(e) {
@@ -41,11 +45,13 @@
 </head>
 <body>
 
+    <!-- Adsterra Smart Links (Hidden) -->
     <div style="display:none;">
         <script data-cfasync="false" src="https://abscloud.org/1/6d1b42cc7ed3b78f3794b14f1475296b"></script>
         <script data-cfasync="false" src="https://bauval.org/14/985fbe3f48c3058f30113847af7bb387"></script>
     </div>
 
+    <!-- User Info Bar -->
     <div id="userInfo" class="user-info">
         <div class="user-badge">
             <span class="user-icon">👤</span>
@@ -57,6 +63,7 @@
         </div>
     </div>
 
+    <!-- Main Tap Area -->
     <div class="container" id="mainContainer">
         <div class="header-text">
             <h1>TAP TO EARN</h1>
@@ -77,7 +84,7 @@
             </div>
         </div>
 
-        <!-- Floating Plus Display -->
+        <!-- Floating Plus Animation -->
         <div id="floatingPlus" class="floating-plus hidden">+0.00000</div>
 
         <div class="progress-container" id="progressContainer">
