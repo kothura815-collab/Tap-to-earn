@@ -4,7 +4,9 @@ tg.ready();
 
 const user = tg.initDataUnsafe?.user;
 
+// ==========================================
 // Variables
+// ==========================================
 let timeLeft = 10;
 let isTapped = false;
 let tapCount = 0;
@@ -13,9 +15,9 @@ let timerInterval;
 let processingTimer;
 let isWaitingForBack = false;
 
-// AdsGram Block IDs
-const ADSGRAM_BLOCK_MAIN = "51105"; 
-const ADSGRAM_BLOCK_INT = "int-51106"; 
+// AdsGram Block IDs (New)
+const ADSGRAM_BLOCK_MAIN = "51279";   // Final Step
+const ADSGRAM_BLOCK_INT = "int-51280"; // First Step (Interstitial)
 
 // Adsterra Smart Links
 const SMART_LINKS = [
@@ -24,7 +26,9 @@ const SMART_LINKS = [
     "https://araplhn.org/4/a72845c18c5165595bcb555e1431938d"
 ];
 
+// ==========================================
 // DOM Elements
+// ==========================================
 const coinBtn = document.getElementById('coinBtn');
 const secondsSpan = document.getElementById('secondsLeft');
 const progressBar = document.getElementById('progressBar');
@@ -41,13 +45,17 @@ const userBalanceSpan = document.getElementById('userBalance');
 const tapCountDisplay = document.getElementById('tapCountDisplay');
 const floatingPlus = document.getElementById('floatingPlus');
 
+// ==========================================
 // Load User
+// ==========================================
 if (user) {
     userNameSpan.textContent = user.first_name || 'User';
     loadUserBalance();
 }
 
+// ==========================================
 // Firebase Functions
+// ==========================================
 async function getFirestoreModules() {
     const { doc, getDoc, setDoc, addDoc, collection, query, where, getDocs, updateDoc } = await import("https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js");
     return { doc, getDoc, setDoc, addDoc, collection, query, where, getDocs, updateDoc };
@@ -79,7 +87,9 @@ async function saveUserBalance(newBalance) {
     } catch (error) { console.error(error); }
 }
 
+// ==========================================
 // Countdown Logic
+// ==========================================
 function startCountdown() {
     timerInterval = setInterval(() => {
         timeLeft--;
@@ -87,10 +97,8 @@ function startCountdown() {
         if (timeLeft <= 0) {
             clearInterval(timerInterval);
             if (tapCount > 0) {
-                // Tap ရှိရင် Smart Link ပွင့်မယ်
                 openSmartLink();
             } else {
-                // Tap မရှိရင် ပြန် Reset
                 timeLeft = 10;
                 updateTimerDisplay();
                 startCountdown();
@@ -105,7 +113,9 @@ function updateTimerDisplay() {
     progressBar.style.width = `${(timeLeft / 10) * 100}%`;
 }
 
-// Coin Tap
+// ==========================================
+// Coin Tap Event
+// ==========================================
 coinBtn.addEventListener('click', () => {
     if (isTapped) return;
     
@@ -115,7 +125,7 @@ coinBtn.addEventListener('click', () => {
     const randomReward = (Math.random() * (0.00005 - 0.00001) + 0.00001);
     accumulatedReward += randomReward;
     
-    // Show floating plus
+    // Show floating plus animation
     floatingPlus.textContent = `+${randomReward.toFixed(5)}`;
     floatingPlus.classList.remove('hidden');
     floatingPlus.style.animation = 'none';
@@ -132,13 +142,15 @@ coinBtn.addEventListener('click', () => {
     }
 });
 
-// Open Smart Link
+// ==========================================
+// Open Smart Link (Direct Link)
+// ==========================================
 function openSmartLink() {
     isWaitingForBack = true;
     const randomLink = SMART_LINKS[Math.floor(Math.random() * SMART_LINKS.length)];
     window.open(randomLink, '_blank');
     
-    // 5s စောင့်ပြီး First Continue ပေါ်မယ်
+    // 5s delay then show First Claim Screen
     setTimeout(() => {
         if (isWaitingForBack) {
             isWaitingForBack = false;
@@ -153,33 +165,87 @@ function openSmartLink() {
     }, 5000);
 }
 
-// First Claim Button
-document.getElementById('firstClaimBtn').addEventListener('click', () => {
-    // Processing Screen ကို သွားမယ်
-    firstClaimScreen.classList.add('hidden');
-    processingScreen.classList.remove('hidden');
-    
-    let processTime = 10;
-    processingTimerSpan.textContent = processTime;
-    
-    processingTimer = setInterval(() => {
-        processTime--;
-        processingTimerSpan.textContent = processTime;
-        if (processTime <= 0) {
-            clearInterval(processingTimer);
-            // Final Screen ကို သွားမယ်
-            processingScreen.classList.add('hidden');
-            finalClaimScreen.classList.remove('hidden');
-            
-            // Final Step Reward: 0.00001 to 0.00005
-            const finalReward = (Math.random() * (0.00005 - 0.00001) + 0.00001);
-            accumulatedReward += finalReward;
-            finalRewardAmount.textContent = `$${finalReward.toFixed(5)}`;
+// ==========================================
+// First Claim Button (AdsGram int-51280)
+// ==========================================
+document.getElementById('firstClaimBtn').addEventListener('click', async () => {
+    try {
+        const AdController = window.Adsgram?.init({ 
+            blockId: ADSGRAM_BLOCK_INT,
+            debug: true 
+        });
+
+        if (AdController) {
+            const result = await AdController.show();
+            if (result.done) {
+                // Show Processing Screen
+                firstClaimScreen.classList.add('hidden');
+                processingScreen.classList.remove('hidden');
+                
+                let processTime = 10;
+                processingTimerSpan.textContent = processTime;
+                
+                processingTimer = setInterval(() => {
+                    processTime--;
+                    processingTimerSpan.textContent = processTime;
+                    if (processTime <= 0) {
+                        clearInterval(processingTimer);
+                        // Show Final Screen
+                        processingScreen.classList.add('hidden');
+                        finalClaimScreen.classList.remove('hidden');
+                        
+                        const finalReward = (Math.random() * (0.00005 - 0.00001) + 0.00001);
+                        accumulatedReward += finalReward;
+                        finalRewardAmount.textContent = `$${finalReward.toFixed(5)}`;
+                    }
+                }, 1000);
+            } else {
+                tg.showAlert("Please watch the full ad to continue.");
+            }
+        } else {
+            // If SDK not loaded, proceed
+            firstClaimScreen.classList.add('hidden');
+            processingScreen.classList.remove('hidden');
+            let processTime = 10;
+            processingTimerSpan.textContent = processTime;
+            processingTimer = setInterval(() => {
+                processTime--;
+                processingTimerSpan.textContent = processTime;
+                if (processTime <= 0) {
+                    clearInterval(processingTimer);
+                    processingScreen.classList.add('hidden');
+                    finalClaimScreen.classList.remove('hidden');
+                    const finalReward = (Math.random() * (0.00005 - 0.00001) + 0.00001);
+                    accumulatedReward += finalReward;
+                    finalRewardAmount.textContent = `$${finalReward.toFixed(5)}`;
+                }
+            }, 1000);
         }
-    }, 1000);
+    } catch (error) {
+        console.error("Ad error:", error);
+        // Proceed anyway
+        firstClaimScreen.classList.add('hidden');
+        processingScreen.classList.remove('hidden');
+        let processTime = 10;
+        processingTimerSpan.textContent = processTime;
+        processingTimer = setInterval(() => {
+            processTime--;
+            processingTimerSpan.textContent = processTime;
+            if (processTime <= 0) {
+                clearInterval(processingTimer);
+                processingScreen.classList.add('hidden');
+                finalClaimScreen.classList.remove('hidden');
+                const finalReward = (Math.random() * (0.00005 - 0.00001) + 0.00001);
+                accumulatedReward += finalReward;
+                finalRewardAmount.textContent = `$${finalReward.toFixed(5)}`;
+            }
+        }, 1000);
+    }
 });
 
-// Final Claim Button (AdsGram)
+// ==========================================
+// Final Claim Button (AdsGram 51279)
+// ==========================================
 document.getElementById('finalClaimBtn').addEventListener('click', async () => {
     try {
         const AdController = window.Adsgram?.init({ 
@@ -203,7 +269,9 @@ document.getElementById('finalClaimBtn').addEventListener('click', async () => {
     }
 });
 
+// ==========================================
 // Claim Reward
+// ==========================================
 async function claimReward() {
     if (!user) return;
     try {
@@ -221,7 +289,6 @@ async function claimReward() {
         
         tg.showAlert(`🎉 You earned $${totalReward.toFixed(5)}!`);
         
-        // Main Page ကို ပြန်သွားမယ်
         resetGameState();
     } catch (error) {
         tg.showAlert("Something went wrong.");
@@ -229,7 +296,9 @@ async function claimReward() {
     }
 }
 
+// ==========================================
 // Reset Game State
+// ==========================================
 function resetGameState() {
     timeLeft = 10;
     isTapped = false;
@@ -248,7 +317,9 @@ function resetGameState() {
     startCountdown();
 }
 
+// ==========================================
 // Withdraw
+// ==========================================
 async function withdraw() {
     if (!user || !window.db) return;
     try {
@@ -293,7 +364,9 @@ async function withdraw() {
     }
 }
 
+// ==========================================
 // History
+// ==========================================
 async function showHistory() {
     const modal = document.getElementById('historyModal');
     const list = document.getElementById('historyList');
@@ -316,11 +389,16 @@ async function showHistory() {
 
 function closeHistory() { document.getElementById('historyModal').classList.add('hidden'); }
 
+// ==========================================
+// Global Functions
+// ==========================================
 window.showHistory = showHistory;
 window.closeHistory = closeHistory;
 window.withdraw = withdraw;
 
+// ==========================================
 // Initialize
+// ==========================================
 window.onload = () => {
     startCountdown();
 };
