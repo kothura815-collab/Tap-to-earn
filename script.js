@@ -15,10 +15,16 @@ let timerInterval;
 let processingTimer;
 let isWaitingForBack = false;
 
-// AdsGram Block ID (Main only)
-const ADSGRAM_BLOCK_ID = "51279";
+// ==========================================
+// AdsGram Block IDs (Updated)
+// ==========================================
+const ADSGRAM_BLOCK_MAIN = "51955";  // Main Reward
+const ADSGRAM_BLOCK_INT = "int-51956"; // Interstitial
+const ADSGRAM_BLOCK_TASK = "51957";  // Task/Backup (Written exactly as requested)
 
+// ==========================================
 // Adsterra Smart Links
+// ==========================================
 const SMART_LINKS = [
     "https://asiafilm.org/4/e86eb6e961ace79e8f0afaa11d643848",
     "https://asiafilm.org/4/39fe0c373bd3ed585a41b288e8162a7d",
@@ -167,10 +173,46 @@ function openSmartLink() {
 }
 
 // ==========================================
-// First Claim Button (No AdsGram here - just proceed)
+// First Claim Button (Uses int-51956 or 51957)
 // ==========================================
-document.getElementById('firstClaimBtn').addEventListener('click', () => {
-    // Show Processing Screen
+document.getElementById('firstClaimBtn').addEventListener('click', async () => {
+    let adShown = false;
+
+    // Try Interstitial Ad first
+    try {
+        if (window.Adsgram) {
+            const AdController = window.Adsgram.init({ 
+                blockId: ADSGRAM_BLOCK_INT,
+                debug: true 
+            });
+            if (AdController) {
+                const result = await AdController.show();
+                adShown = result.done;
+            }
+        }
+    } catch (error) {
+        console.error("Interstitial Ad error:", error);
+    }
+
+    // If Interstitial failed, try Task Ad (51957)
+    if (!adShown) {
+        try {
+            if (window.Adsgram) {
+                const AdController = window.Adsgram.init({ 
+                    blockId: ADSGRAM_BLOCK_TASK,
+                    debug: true 
+                });
+                if (AdController) {
+                    const result = await AdController.show();
+                    adShown = result.done;
+                }
+            }
+        } catch (error) {
+            console.error("Task Ad error:", error);
+        }
+    }
+
+    // Proceed to Processing Screen regardless of ad success to avoid freezing
     firstClaimScreen.classList.add('hidden');
     processingScreen.classList.remove('hidden');
     
@@ -182,7 +224,6 @@ document.getElementById('firstClaimBtn').addEventListener('click', () => {
         processingTimerSpan.textContent = processTime;
         if (processTime <= 0) {
             clearInterval(processingTimer);
-            // Show Final Screen
             processingScreen.classList.add('hidden');
             finalClaimScreen.classList.remove('hidden');
             
@@ -194,30 +235,31 @@ document.getElementById('firstClaimBtn').addEventListener('click', () => {
 });
 
 // ==========================================
-// Final Claim Button (AdsGram 51279)
+// Final Claim Button (Uses 51955)
 // ==========================================
 document.getElementById('finalClaimBtn').addEventListener('click', async () => {
     try {
-        const AdController = window.Adsgram?.init({ 
-            blockId: ADSGRAM_BLOCK_ID,
-            debug: true 
-        });
-
-        if (AdController) {
-            const result = await AdController.show();
-            if (result.done) {
-                await claimReward();
+        if (window.Adsgram) {
+            const AdController = window.Adsgram.init({ 
+                blockId: ADSGRAM_BLOCK_MAIN,
+                debug: true 
+            });
+            if (AdController) {
+                const result = await AdController.show();
+                if (result.done) {
+                    await claimReward();
+                } else {
+                    tg.showAlert("Please watch the full ad to claim.");
+                }
             } else {
-                tg.showAlert("Please watch the full ad to claim.");
+                await claimReward();
             }
         } else {
-            // If SDK not loaded, claim directly
             await claimReward();
         }
     } catch (error) {
-        console.error("Ad error:", error);
-        // If error, claim directly
-        await claimReward();
+        console.error("Main Ad error:", error);
+        await claimReward(); // Fallback
     }
 });
 
